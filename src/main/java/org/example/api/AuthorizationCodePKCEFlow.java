@@ -28,7 +28,7 @@ public class AuthorizationCodePKCEFlow {
 
     private final AuthorizationCodeUriRequest authorizationCodeUriRequest = spotifyApi.authorizationCodePKCEUri(codeChallenge)
             .state(state)
-//          .scope("user-read-birthdate,user-read-email")
+            .scope("playlist-read-private,user-read-currently-playing,user-read-playback-state,user-modify-playback-state")
 //          .show_dialog(true)
             .build();
 
