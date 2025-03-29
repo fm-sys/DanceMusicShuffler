@@ -15,21 +15,23 @@ public class Main {
 
     public static void main(String[] args) {
 
-        AuthorizationCodePKCEFlow authorizationCodePKCEFlow = new AuthorizationCodePKCEFlow(() ->
-        {
-            System.out.println("Authorization code flow finished!");
-            getPlaylists(() -> {
-                System.out.println("Playlists fetched: " + playlists.size());
-                playlists.forEach(playlist -> {
-                    System.out.println(playlist.getName());
-                });
-            });
-        });
-
-
-        authorizationCodePKCEFlow.start();
+        AuthorizationCodePKCEFlow authorizationCodePKCEFlow = new AuthorizationCodePKCEFlow(Main::initialization);
         api = authorizationCodePKCEFlow.getSpotifyApi();
 
+        if (true) { // you may switch whether to use the authorization code flow or not
+            authorizationCodePKCEFlow.start();
+        } else {
+            api.setAccessToken("???");
+            initialization();
+        }
+
+    }
+
+    private static void initialization() {
+        System.out.println("Authorization code flow finished!");
+        System.out.println("Access token: " + api.getAccessToken());
+
+        getPlaylists(() -> new MainGui(playlists));
     }
 
     private static void getPlaylists(Runnable doneCallback) {
