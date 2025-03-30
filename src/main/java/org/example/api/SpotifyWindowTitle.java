@@ -3,13 +3,14 @@ package org.example.api;
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
+import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 
 public class SpotifyWindowTitle {
     static HWND spotifyWindow = null;
     static String lastWindowTitle = null;
 
     public static void main(String[] args) {
-        searchSpotifyWindowInitial();
+        searchSpotifyWindowInitial(null);
 
         while (spotifyWindow != null) {
             if (titleChanged()) {
@@ -19,7 +20,7 @@ public class SpotifyWindowTitle {
 
     }
 
-    private static void searchSpotifyWindowInitial() {
+    public static void searchSpotifyWindowInitial(IPlaylistItem currentTrack) {
         // Enumerate all top-level windows
         User32.INSTANCE.EnumWindows((hWnd, arg1) -> {
             // Get the window title length
@@ -31,7 +32,7 @@ public class SpotifyWindowTitle {
             }
 
             // Check if this window belongs to Spotify
-            if (wText.equalsIgnoreCase("Spotify Premium")) {
+            if (wText.equalsIgnoreCase("Spotify Premium") || (currentTrack != null && wText.contains(currentTrack.getName()))) {
                 System.out.println("Found Spotify window: " + wText);
                 spotifyWindow = hWnd;
                 lastWindowTitle = wText;
@@ -44,11 +45,14 @@ public class SpotifyWindowTitle {
         int titleLength = User32.INSTANCE.GetWindowTextLength(hWnd) + 1;
         char[] windowText = new char[titleLength];
         User32.INSTANCE.GetWindowText(hWnd, windowText, titleLength);
-        String wText = Native.toString(windowText).trim();
-        return wText;
+        return Native.toString(windowText).trim();
     }
 
     public static boolean titleChanged() {
+        if (spotifyWindow == null) {
+            return false;
+        }
+
         String newTitle = getWText(spotifyWindow);
         if (newTitle.equals(lastWindowTitle)) {
             return false;

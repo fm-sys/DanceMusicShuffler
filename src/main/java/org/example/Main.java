@@ -1,9 +1,14 @@
 package org.example;
 
+import org.apache.hc.core5.http.ParseException;
 import org.example.api.AuthorizationCodePKCEFlow;
+import org.example.api.SpotifyWindowTitle;
 import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +36,15 @@ public class Main {
         System.out.println("Authorization code flow finished!");
         System.out.println("Access token: " + api.getAccessToken());
 
-        getPlaylists(() -> new MainGui(playlists));
+        CurrentlyPlaying currentlyPlaying;
+        try {
+            currentlyPlaying = api.getUsersCurrentlyPlayingTrack().build().execute();
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            throw new RuntimeException(e);
+        }
+        SpotifyWindowTitle.searchSpotifyWindowInitial(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
+
+        getPlaylists(() -> new MainGui(playlists, api));
     }
 
     private static void getPlaylists(Runnable doneCallback) {
@@ -45,13 +58,12 @@ public class Main {
                 .build()
                 .executeAsync()
                 .thenAccept(response -> {
-                    System.out.println("Total: " + response.getTotal() + " Current offset: " + response.getOffset());
                     playlists.addAll(List.of(response.getItems()));
 
                     if (response.getTotal() > response.getOffset() + response.getLimit()) {
                         getPlaylists(response.getOffset() + response.getLimit(), doneCallback);
                     } else {
-                        System.out.println("All playlists fetched!");
+                        System.out.println(playlists.size() + " playlists fetched!");
                         if (doneCallback != null) {
                             doneCallback.run();
                         }
