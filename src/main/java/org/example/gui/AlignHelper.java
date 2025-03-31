@@ -4,6 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 
 public class AlignHelper {
+
+    private AlignHelper() {
+        // Prevent instantiation
+    }
+
     public static Component left(Component panel) {
         Box b = Box.createHorizontalBox();
         b.add(panel);
