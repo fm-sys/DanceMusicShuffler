@@ -4,6 +4,7 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.SpotifyHttpManager;
 import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -12,35 +13,26 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-public class AuthorizationCodePKCEFlow {
+public class Api {
 
     private static final String clientId = "b7cea7e9e1af4b16b985cd76af7ea846";
     private static final URI redirectUri = SpotifyHttpManager.makeUri("http://127.0.0.1:1702/callback");
-    private static final SpotifyApi spotifyApi = new SpotifyApi.Builder()
+
+    public static final SpotifyApi INSTANCE = new SpotifyApi.Builder()
             .setClientId(clientId)
             .setRedirectUri(redirectUri)
             .build();
-
 
     private final String codeVerify = generateCode(128);
     private final String codeChallenge = generateCodeChallenge(codeVerify);
     private final String state = generateCode(16);
 
-    private final AuthorizationCodeUriRequest authorizationCodeUriRequest = spotifyApi.authorizationCodePKCEUri(codeChallenge)
+    private final AuthorizationCodeUriRequest authorizationCodeUriRequest = INSTANCE.authorizationCodePKCEUri(codeChallenge)
             .state(state)
             .scope("playlist-read-private,user-read-currently-playing,user-read-playback-state,user-modify-playback-state")
 //          .show_dialog(true)
             .build();
 
-    Runnable readyCallback;
-
-    public AuthorizationCodePKCEFlow(Runnable readyCallback) {
-        this.readyCallback = readyCallback;
-    }
-
-    public AuthorizationCodePKCEFlow() {
-        this(null);
-    }
 
     private static String generateCode(int length) {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -52,7 +44,7 @@ public class AuthorizationCodePKCEFlow {
         return codeChallenge.toString();
     }
 
-    public static String generateCodeChallenge(String codeVerifier) {
+    private static String generateCodeChallenge(String codeVerifier) {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -77,37 +69,35 @@ public class AuthorizationCodePKCEFlow {
         });
     }
 
-    private void serverCallback(String code) {
-        spotifyApi
+    private void serverCallback(String code, Runnable readyCallback) {
+        INSTANCE
                 .authorizationCodePKCE(code, codeVerify)
                 .build()
                 .executeAsync()
                 .thenAccept(credentials -> {
-                    spotifyApi.setAccessToken(credentials.getAccessToken());
-                    spotifyApi.setRefreshToken(credentials.getRefreshToken());
+                    INSTANCE.setAccessToken(credentials.getAccessToken());
+                    INSTANCE.setRefreshToken(credentials.getRefreshToken());
                     System.out.println("Autorisation successful. Token expires in: " + credentials.getExpiresIn() + " seconds.");
+                    new Timer(1000 * (credentials.getExpiresIn() - 60), evt -> refreshAccessToken()).start();
                     if (readyCallback != null) {
                         readyCallback.run();
                     }
                 });
     }
 
-    public void refreshAccessToken() {
-        spotifyApi.authorizationCodePKCERefresh()
+    private void refreshAccessToken() {
+        INSTANCE.authorizationCodePKCERefresh()
                 .build()
                 .executeAsync().thenAccept(credentials -> {
-                    spotifyApi.setAccessToken(credentials.getAccessToken());
-                    System.out.println("Refreshed token. Token expires in: " + credentials.getExpiresIn() + " seconds.");
+                    INSTANCE.setAccessToken(credentials.getAccessToken());
+                    INSTANCE.setRefreshToken(credentials.getRefreshToken());
+                    System.out.println("Refreshed token.");
                 });
     }
 
-    public SpotifyApi getSpotifyApi() {
-        return spotifyApi;
-    }
-
-    public void start() {
+    public void startAuthorizationCodePKCEFlow(Runnable readyCallback) {
         try {
-            OAuthRedirectServer.run(state, this::serverCallback);
+            OAuthRedirectServer.run(state, code -> serverCallback(code, readyCallback));
         } catch (IOException e) {
             System.out.println("Error: " + e.getMessage());
         }

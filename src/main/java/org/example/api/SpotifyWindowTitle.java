@@ -60,5 +60,9 @@ public class SpotifyWindowTitle {
         lastWindowTitle = newTitle;
         return true;
     }
+
+    public static boolean initialized() {
+        return spotifyWindow != null;
+    }
 }
 

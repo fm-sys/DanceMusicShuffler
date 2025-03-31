@@ -1,7 +1,7 @@
 package org.example;
 
 import org.apache.hc.core5.http.ParseException;
-import org.example.api.AuthorizationCodePKCEFlow;
+import org.example.api.Api;
 import org.example.api.SpotifyWindowTitle;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
@@ -14,37 +14,30 @@ import java.util.List;
 
 public class Main {
 
-    static SpotifyApi api;
-
     static List<PlaylistSimplified> playlists = new ArrayList<>();
 
     public static void main(String[] args) {
-
-        AuthorizationCodePKCEFlow authorizationCodePKCEFlow = new AuthorizationCodePKCEFlow(Main::initialization);
-        api = authorizationCodePKCEFlow.getSpotifyApi();
-
         if (true) { // you may switch whether to use the authorization code flow or not
-            authorizationCodePKCEFlow.start();
+            new Api().startAuthorizationCodePKCEFlow(Main::initialization);
         } else {
-            api.setAccessToken("???");
+            Api.INSTANCE.setAccessToken("???");
             initialization();
         }
-
     }
 
     private static void initialization() {
         System.out.println("Authorization code flow finished!");
-        System.out.println("Access token: " + api.getAccessToken());
+        System.out.println("Access token: " + Api.INSTANCE.getAccessToken());
 
         CurrentlyPlaying currentlyPlaying;
         try {
-            currentlyPlaying = api.getUsersCurrentlyPlayingTrack().build().execute();
+            currentlyPlaying = Api.INSTANCE.getUsersCurrentlyPlayingTrack().build().execute();
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             throw new RuntimeException(e);
         }
         SpotifyWindowTitle.searchSpotifyWindowInitial(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
 
-        getPlaylists(() -> new MainGui(playlists, api));
+        getPlaylists(() -> new MainGui(playlists));
     }
 
     private static void getPlaylists(Runnable doneCallback) {
@@ -52,7 +45,7 @@ public class Main {
     }
     private static void getPlaylists(int offset, Runnable doneCallback) {
         // Get a List of Current User's Playlists
-        api.getListOfCurrentUsersPlaylists()
+        Api.INSTANCE.getListOfCurrentUsersPlaylists()
                 .limit(50)
                 .offset(offset)
                 .build()

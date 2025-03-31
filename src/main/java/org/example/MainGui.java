@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.api.Api;
 import org.example.api.SpotifyWindowTitle;
 import org.example.gui.AlignHelper;
 import org.example.gui.BadgeLabel;
@@ -26,8 +27,6 @@ import java.util.stream.Collectors;
 
 public class MainGui {
 
-    final SpotifyApi api;
-
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
 
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
@@ -47,9 +46,7 @@ public class MainGui {
 
     JPanel nowPlayingPanel;
 
-    public MainGui(Collection<PlaylistSimplified> lists, SpotifyApi api) {
-
-        this.api = api;
+    public MainGui(Collection<PlaylistSimplified> lists) {
 
         lists
 //                .stream()
@@ -254,8 +251,12 @@ public class MainGui {
     }
 
     private void updateNowPlaying() {
-        api.getTheUsersQueue().build().executeAsync().thenAccept(response -> {
+        Api.INSTANCE.getTheUsersQueue().build().executeAsync().thenAccept(response -> {
             recreateQueueList(response.getQueue());
+
+            if (!SpotifyWindowTitle.initialized()) {
+                SpotifyWindowTitle.searchSpotifyWindowInitial(response.getCurrentlyPlaying());
+            }
 
             nowPlayingPanel.removeAll();
             nowPlayingPanel.add(Box.createHorizontalGlue());
