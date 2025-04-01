@@ -47,8 +47,8 @@ public class BadgeLabel extends JLabel {
     @Override
     public Dimension getPreferredSize() {
         FontMetrics fm = getFontMetrics(getFont());
-        int width = fm.stringWidth(getText()) + 20; // Add padding
-        int height = fm.getHeight() + 10;
+        int height = fm.getHeight() + 20; // Add padding
+        int width = fm.stringWidth(getText()) + height;
         return new Dimension(width, height);
     }
 

@@ -1,6 +1,7 @@
 package org.example;
 
 import org.example.gui.AlignHelper;
+import org.example.gui.BadgeLabel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,6 +14,7 @@ public class SecondaryMonitorGui {
     JLabel cover;
     JLabel titleLabel;
     JLabel artistLabel;
+    JPanel badgesPanel;
 
     public SecondaryMonitorGui() {
 
@@ -47,6 +49,14 @@ public class SecondaryMonitorGui {
         artistLabel.setForeground(Color.LIGHT_GRAY);
         coverPanel.add(AlignHelper.center(artistLabel));
 
+        coverPanel.add(Box.createVerticalStrut(30));
+
+        badgesPanel = new JPanel();
+        badgesPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
+        badgesPanel.setBackground(Color.BLACK);
+        badgesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
+        coverPanel.add(badgesPanel);
+
         coverPanel.add(Box.createVerticalGlue());
 
         frame.getContentPane().add(coverPanel, BorderLayout.CENTER);
@@ -79,6 +89,18 @@ public class SecondaryMonitorGui {
                 cover.setIcon(new ImageIcon(roundedImage));
                 titleLabel.setText(trackName);
                 artistLabel.setText(artistName);
+
+                badgesPanel.removeAll();
+
+                for (String badge : badges) {
+                    BadgeLabel badgeLabel = new BadgeLabel(badge);
+                    badgeLabel.setFont(badgeLabel.getFont().deriveFont(36.0f));
+                    badgesPanel.add(badgeLabel);
+                }
+
+                badgesPanel.revalidate();
+                badgesPanel.repaint();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }

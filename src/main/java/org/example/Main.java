@@ -3,7 +3,6 @@ package org.example;
 import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
 import org.example.api.SpotifyWindowTitle;
-import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
@@ -17,10 +16,13 @@ public class Main {
     static List<PlaylistSimplified> playlists = new ArrayList<>();
 
     public static void main(String[] args) {
-        if (true) { // you may switch whether to use the authorization code flow or not
+
+
+        String accessToken = "";
+        if (accessToken == null || accessToken.isEmpty()) {
             new Api().startAuthorizationCodePKCEFlow(Main::initialization);
         } else {
-            Api.INSTANCE.setAccessToken("???");
+            Api.INSTANCE.setAccessToken(accessToken);
             initialization();
         }
     }

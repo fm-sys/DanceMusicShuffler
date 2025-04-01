@@ -1,13 +1,13 @@
 package org.example;
 
 import org.example.api.Api;
+import org.example.api.PlaylistLoader;
 import org.example.api.SpotifyWindowTitle;
 import org.example.gui.AlignHelper;
 import org.example.gui.BadgeLabel;
 import org.example.gui.HintTextField;
 import org.example.gui.TristateCheckBox;
 import org.example.models.PlaylistModel;
-import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
@@ -32,9 +32,7 @@ public class MainGui {
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
 
-    JLabel label;
     JFrame frame;
-//    JPanel panel;
 
     String filterText;
 
@@ -45,6 +43,10 @@ public class MainGui {
     JPanel queueListPanel;
 
     JPanel nowPlayingPanel;
+
+    JSpinner songNumberSpinner;
+    JSpinner cooldownSpinner;
+    JButton loadAndShuffleButton;
 
     public MainGui(Collection<PlaylistSimplified> lists) {
 
@@ -64,8 +66,6 @@ public class MainGui {
         frame = new JFrame();
         frame.setLayout(new BorderLayout());
 
-        label = new JLabel("Hello World");
-
 //        panel = new JPanel();
 //        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 //        //panel.setLayout(new GridLayout(0, 1));
@@ -74,7 +74,8 @@ public class MainGui {
 //
         createPlaylistList();
         createQueueList();
-        initNowPlaying();
+        createCenterOptionsPanel();
+        createNowPlaying();
 
         new Timer(1000, evt -> {
             if (SpotifyWindowTitle.titleChanged()) {
@@ -104,15 +105,119 @@ public class MainGui {
             }
         });
 
-        frame.add(label, BorderLayout.CENTER);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("Dance Music Shuffler");
         frame.setMinimumSize(new Dimension(600, 300));
         frame.setSize(new Dimension(900, 600));
         frame.setLocationByPlatform(true);
-        //frame.pack();
         frame.setVisible(true);
-        frame.requestFocusInWindow();
+        loadAndShuffleButton.requestFocusInWindow();
+    }
+
+    private void createCenterOptionsPanel() {
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        frame.add(centerPanel, BorderLayout.CENTER);
+
+        centerPanel.add(Box.createVerticalGlue());
+
+        JPanel labeledPanel = new JPanel();
+        labeledPanel.setLayout(new BoxLayout(labeledPanel, BoxLayout.Y_AXIS));
+        labeledPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Options"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        centerPanel.add(labeledPanel);
+
+        JLabel songNumberLabel = new JLabel("Number of songs to add to queue:");
+        labeledPanel.add(AlignHelper.left(songNumberLabel));
+
+        songNumberSpinner = new JSpinner(new SpinnerNumberModel(10, 0, Integer.MAX_VALUE, 1));
+        songNumberSpinner.setMaximumSize(new Dimension(songNumberSpinner.getPreferredSize().width, songNumberSpinner.getPreferredSize().height));
+        labeledPanel.add(AlignHelper.left(songNumberSpinner));
+
+        labeledPanel.add(Box.createVerticalStrut(10));
+
+        JLabel cooldownLabel = new JLabel("Number of songs a playlist should not be reused:");
+        labeledPanel.add(AlignHelper.left(cooldownLabel));
+
+        cooldownSpinner = new JSpinner(new SpinnerNumberModel(3, 0, Integer.MAX_VALUE, 1));
+        cooldownSpinner.setMaximumSize(new Dimension(cooldownSpinner.getPreferredSize().width, cooldownSpinner.getPreferredSize().height));
+        labeledPanel.add(AlignHelper.left(cooldownSpinner));
+
+        labeledPanel.add(Box.createVerticalStrut(10));
+
+        JLabel exclusiveLabel = new JLabel("These playlists are not allowed to be played directly after each other:");
+        labeledPanel.add(AlignHelper.left(exclusiveLabel));
+
+        JButton exclusiveButton = new JButton("Select exclusive playlists");
+        exclusiveButton.addActionListener(e -> showExclusivePoolDialog());
+        labeledPanel.add(AlignHelper.left(exclusiveButton));
+
+        centerPanel.add(Box.createVerticalStrut(10));
+
+        loadAndShuffleButton = new JButton("Load Playlists and Shuffle");
+        loadAndShuffleButton.addActionListener(e -> {
+            if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
+                JOptionPane.showMessageDialog(frame, "Please select at least one playlist to shuffle.");
+                return;
+            }
+
+            loadAndShuffleButton.setEnabled(false);
+            loadAndShuffleButton.setText("Loading...");
+
+            PlaylistLoader.loadPlaylistsAsync(playlists).thenAccept(success -> {
+                if (success) {
+                    // Shuffle playlists
+
+                } else {
+                    JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
+                }
+
+                loadAndShuffleButton.setEnabled(true);
+                loadAndShuffleButton.setText("Load Playlists and Shuffle");
+                updateNowPlaying(); // Cause there may be new badges available
+            });
+        });
+        JPanel expandedButtonPanel = new JPanel(new GridLayout(0, 1));
+        expandedButtonPanel.setPreferredSize(new Dimension(0, 50));
+        expandedButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
+        expandedButtonPanel.add(loadAndShuffleButton);
+        centerPanel.add(expandedButtonPanel);
+
+        centerPanel.add(Box.createVerticalGlue());
+
+    }
+
+    private void showExclusivePoolDialog() {
+        if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
+            JOptionPane.showMessageDialog(frame, "Please select playlists for the general pool first.");
+            return;
+        }
+
+        JDialog dialog = new JDialog(frame, "Select exclusive playlists", true);
+        dialog.setLayout(new BoxLayout(dialog.getContentPane(), BoxLayout.Y_AXIS));
+        dialog.setSize(300, 200);
+        dialog.setLocationRelativeTo(frame);
+
+        JPanel checkboxesPanel = new JPanel();
+        checkboxesPanel.setLayout(new BoxLayout(checkboxesPanel, BoxLayout.Y_AXIS));
+
+        playlists.stream().filter(PlaylistModel::isChecked).forEach(playlist -> {
+            JCheckBox checkBox = new JCheckBox(playlist.getPlaylist().getName());
+            checkBox.setSelected(playlist.isExclusive());
+            checkBox.addActionListener(event -> playlist.setExclusive(checkBox.isSelected()));
+            checkboxesPanel.add(checkBox);
+        });
+
+        JScrollPane scrollPane = new JScrollPane(checkboxesPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        dialog.add(scrollPane);
+
+        dialog.setVisible(true);
     }
 
     private void createQueueList() {
@@ -140,11 +245,25 @@ public class MainGui {
 
     }
 
+    private int calculateBadgeHeight() {
+        return new BadgeLabel("Dummy").getPreferredSize().height;
+    }
+
     private void recreateQueueList(java.util.List<IPlaylistItem> queue) {
         queueListPanel.removeAll();
+
+        int lineHeight = calculateBadgeHeight();
+
         queue.forEach(item -> {
-            JLabel label = new JLabel(item.getName());
-            queueListPanel.add(label);
+            Box b = Box.createHorizontalBox();
+            b.add(Box.createRigidArea(new Dimension(5, lineHeight)));
+            b.add(new JLabel(item.getName()));
+            for (String badge : getBadges(item)) {
+                b.add(Box.createHorizontalStrut(5));
+                b.add(new BadgeLabel(badge));
+            }
+            b.add(Box.createHorizontalGlue());
+            queueListPanel.add(b);
         });
         queueListPanel.revalidate(); // Updates layout
         queueListPanel.repaint();    // Redraws panel
@@ -241,7 +360,7 @@ public class MainGui {
         }
     }
 
-    private void initNowPlaying() {
+    private void createNowPlaying() {
         nowPlayingPanel = new JPanel();
         nowPlayingPanel.setLayout(new BoxLayout(nowPlayingPanel, BoxLayout.X_AXIS));
         nowPlayingPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -260,9 +379,13 @@ public class MainGui {
 
             nowPlayingPanel.removeAll();
             nowPlayingPanel.add(Box.createHorizontalGlue());
-            StringBuilder label = new StringBuilder("Now playing: ");
+            nowPlayingPanel.add(Box.createRigidArea(new Dimension(0, calculateBadgeHeight())));
+            nowPlayingPanel.add(new JLabel("Now playing: "));
             if (response.getCurrentlyPlaying() != null) {
+                StringBuilder label = new StringBuilder();
                 label.append(response.getCurrentlyPlaying().getName());
+
+                ArrayList<String> badges = getBadges(response.getCurrentlyPlaying());
 
                 if (response.getCurrentlyPlaying() instanceof Track track) {
                     if (track.getArtists() != null) {
@@ -282,7 +405,7 @@ public class MainGui {
                             try {
                                 URI url = new URI(image.getUrl());
                                 BufferedImage image1 = ImageIO.read(url.toURL());
-                                secondaryMonitorGui.update(image1, track.getName(), Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")), null);
+                                secondaryMonitorGui.update(image1, track.getName(), Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")), badges);
                             } catch (Exception exp) {
                                 exp.printStackTrace();
                             }
@@ -291,25 +414,39 @@ public class MainGui {
                     }
                 }
 
+                JLabel l = new JLabel(label.toString());
+                l.setFont(l.getFont().deriveFont(Font.BOLD));
+                nowPlayingPanel.add(l);
+
+                for (String badge : badges) {
+                    nowPlayingPanel.add(Box.createHorizontalStrut(5));
+                    nowPlayingPanel.add(new BadgeLabel(badge));
+                }
+
             } else {
-                label.append("---");
+                nowPlayingPanel.add(new JLabel("--- No song playing ---"));
             }
 
-            JLabel l = new JLabel(label.toString());
-            l.setFont(l.getFont().deriveFont(Font.BOLD));
-
-            nowPlayingPanel.add(l);
-            nowPlayingPanel.add(Box.createHorizontalStrut(5));
-            nowPlayingPanel.add(new BadgeLabel("badge"));
             nowPlayingPanel.add(Box.createHorizontalGlue());
             nowPlayingPanel.revalidate();
-            nowPlayingPanel.revalidate();
             nowPlayingPanel.repaint();
+        }).whenComplete((res, ex) -> {
+            if (ex != null) {
+                System.err.println("Caught Exception: " + ex.getMessage());
+            }
         });
     }
 
-    // Layout types:
-    //  BorderLayout (for overall Gui)
-    //  BoxLayout (like Android linear layout)
-    //  GroupLayout (mal sehen ob benötigt, kann zum Gruppieren von Elementen verwendet werden)
+    private ArrayList<String> getBadges(IPlaylistItem track) {
+        ArrayList<String> badges = new ArrayList<>();
+        for (PlaylistModel playlist : playlists) {
+            if (!playlist.isChecked() || playlist.getTracks() == null) {
+                continue;
+            }
+            if (playlist.getTracks().stream().anyMatch(playlistTrack -> track.getId().equals(playlistTrack.getTrack().getId()))) {
+                badges.add(playlist.getPlaylist().getName());
+            }
+        }
+        return badges;
+    }
 }
