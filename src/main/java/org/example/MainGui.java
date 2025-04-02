@@ -1,13 +1,15 @@
 package org.example;
 
 import org.example.api.Api;
-import org.example.api.PlaylistLoader;
+import org.example.worker.PersistentPreferences;
+import org.example.worker.PlaylistLoader;
 import org.example.api.SpotifyWindowTitle;
 import org.example.gui.AlignHelper;
 import org.example.gui.BadgeLabel;
 import org.example.gui.HintTextField;
 import org.example.gui.TristateCheckBox;
 import org.example.models.PlaylistModel;
+import org.example.worker.ShuffleAlgorithm;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
@@ -16,6 +18,8 @@ import se.michaelthelin.spotify.model_objects.specification.Track;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.image.BufferedImage;
@@ -31,6 +35,7 @@ public class MainGui {
 
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
+    ShuffleAlgorithm shuffleAlgorithm;
 
     JFrame frame;
 
@@ -48,6 +53,8 @@ public class MainGui {
     JSpinner cooldownSpinner;
     JButton loadAndShuffleButton;
 
+    JPanel[] sidePanels = new JPanel[2];
+
     public MainGui(Collection<PlaylistSimplified> lists) {
 
         lists
@@ -55,6 +62,7 @@ public class MainGui {
 //                .sorted(Comparator.comparing(PlaylistSimplified::getName))
                 .forEach(playlist -> playlists.add(new PlaylistModel(playlist)));
         playlistsFiltered.addAll(playlists);
+        shuffleAlgorithm = new ShuffleAlgorithm(playlists);
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -105,10 +113,20 @@ public class MainGui {
             }
         });
 
+        frame.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                for (JPanel panel : sidePanels) {
+                    panel.setPreferredSize(new Dimension((frame.getWidth() - 400) / 2, 0));
+                    panel.revalidate();
+                }
+            }
+        });
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("Dance Music Shuffler");
         frame.setMinimumSize(new Dimension(600, 300));
-        frame.setSize(new Dimension(900, 600));
+        frame.setSize(new Dimension(1000, 600));
         frame.setLocationByPlatform(true);
         frame.setVisible(true);
         loadAndShuffleButton.requestFocusInWindow();
@@ -122,38 +140,69 @@ public class MainGui {
 
         centerPanel.add(Box.createVerticalGlue());
 
-        JPanel labeledPanel = new JPanel();
-        labeledPanel.setLayout(new BoxLayout(labeledPanel, BoxLayout.Y_AXIS));
-        labeledPanel.setBorder(BorderFactory.createCompoundBorder(
+        JPanel labeledPanelOptions = new JPanel();
+        labeledPanelOptions.setLayout(new BoxLayout(labeledPanelOptions, BoxLayout.Y_AXIS));
+        labeledPanelOptions.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Options"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        centerPanel.add(labeledPanel);
+        centerPanel.add(labeledPanelOptions);
 
         JLabel songNumberLabel = new JLabel("Number of songs to add to queue:");
-        labeledPanel.add(AlignHelper.left(songNumberLabel));
+        labeledPanelOptions.add(AlignHelper.left(songNumberLabel));
 
         songNumberSpinner = new JSpinner(new SpinnerNumberModel(10, 0, Integer.MAX_VALUE, 1));
         songNumberSpinner.setMaximumSize(new Dimension(songNumberSpinner.getPreferredSize().width, songNumberSpinner.getPreferredSize().height));
-        labeledPanel.add(AlignHelper.left(songNumberSpinner));
+        labeledPanelOptions.add(AlignHelper.left(songNumberSpinner));
 
-        labeledPanel.add(Box.createVerticalStrut(10));
+        labeledPanelOptions.add(Box.createVerticalStrut(10));
 
         JLabel cooldownLabel = new JLabel("Number of songs a playlist should not be reused:");
-        labeledPanel.add(AlignHelper.left(cooldownLabel));
+        labeledPanelOptions.add(AlignHelper.left(cooldownLabel));
 
         cooldownSpinner = new JSpinner(new SpinnerNumberModel(3, 0, Integer.MAX_VALUE, 1));
         cooldownSpinner.setMaximumSize(new Dimension(cooldownSpinner.getPreferredSize().width, cooldownSpinner.getPreferredSize().height));
-        labeledPanel.add(AlignHelper.left(cooldownSpinner));
+        labeledPanelOptions.add(AlignHelper.left(cooldownSpinner));
 
-        labeledPanel.add(Box.createVerticalStrut(10));
+        labeledPanelOptions.add(Box.createVerticalStrut(10));
 
         JLabel exclusiveLabel = new JLabel("These playlists are not allowed to be played directly after each other:");
-        labeledPanel.add(AlignHelper.left(exclusiveLabel));
+        labeledPanelOptions.add(AlignHelper.left(exclusiveLabel));
 
         JButton exclusiveButton = new JButton("Select exclusive playlists");
         exclusiveButton.addActionListener(e -> showExclusivePoolDialog());
-        labeledPanel.add(AlignHelper.left(exclusiveButton));
+        labeledPanelOptions.add(AlignHelper.left(exclusiveButton));
+
+        centerPanel.add(Box.createVerticalStrut(10));
+
+        JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2));
+        labeledPanelConfig.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Store/Load Configuration"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        labeledPanelConfig.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
+        centerPanel.add(labeledPanelConfig);
+
+        JButton storeButton = new JButton("Store configuration");
+        storeButton.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(frame, "This will overwrite any existing configuration. Do you want to continue?", "Warning", JOptionPane.YES_NO_OPTION);
+            if (result != JOptionPane.YES_OPTION) {
+                return;
+            }
+            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue());
+        });
+        labeledPanelConfig.add(storeButton);
+
+        JButton loadButton = new JButton("Load configuration");
+        loadButton.addActionListener(e -> {
+            PersistentPreferences.MainGuiParams params = PersistentPreferences.load(playlists);
+            if (params != null) {
+                songNumberSpinner.setValue(params.count);
+                cooldownSpinner.setValue(params.cooldown);
+                recreatePlaylistsList();
+            }
+        });
+        labeledPanelConfig.add(loadButton);
 
         centerPanel.add(Box.createVerticalStrut(10));
 
@@ -167,18 +216,21 @@ public class MainGui {
             loadAndShuffleButton.setEnabled(false);
             loadAndShuffleButton.setText("Loading...");
 
-            PlaylistLoader.loadPlaylistsAsync(playlists).thenAccept(success -> {
-                if (success) {
-                    // Shuffle playlists
-
-                } else {
-                    JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
-                }
-
-                loadAndShuffleButton.setEnabled(true);
-                loadAndShuffleButton.setText("Load Playlists and Shuffle");
-                updateNowPlaying(); // Cause there may be new badges available
-            });
+            PlaylistLoader.loadPlaylistsAsync(playlists)
+                    .thenAccept(success -> {
+                        if (success) {
+                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue()).thenAccept(result -> restoreLoadAndShuffleButton());
+                        } else {
+                            JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
+                            restoreLoadAndShuffleButton();
+                        }
+                    })
+                    .whenComplete((res, ex) -> {
+                        if (ex != null) {
+                            System.err.println("Caught Exception: " + ex.getMessage());
+                            ex.printStackTrace();
+                        }
+                    });
         });
         JPanel expandedButtonPanel = new JPanel(new GridLayout(0, 1));
         expandedButtonPanel.setPreferredSize(new Dimension(0, 50));
@@ -188,6 +240,12 @@ public class MainGui {
 
         centerPanel.add(Box.createVerticalGlue());
 
+    }
+
+    private void restoreLoadAndShuffleButton() {
+        loadAndShuffleButton.setEnabled(true);
+        loadAndShuffleButton.setText("Load Playlists and Shuffle");
+        updateNowPlaying(); // Cause there may be new badges available
     }
 
     private void showExclusivePoolDialog() {
@@ -237,10 +295,9 @@ public class MainGui {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        outerPanel.setPreferredSize(new Dimension(250, 0));
-
         outerPanel.add(scrollPane);
 
+        sidePanels[1] = outerPanel;
         frame.add(outerPanel, BorderLayout.LINE_END);
 
     }
@@ -253,12 +310,14 @@ public class MainGui {
         queueListPanel.removeAll();
 
         int lineHeight = calculateBadgeHeight();
+        ArrayList<String> nextPlaylists = new ArrayList<>();
 
         queue.forEach(item -> {
             Box b = Box.createHorizontalBox();
             b.add(Box.createRigidArea(new Dimension(5, lineHeight)));
             b.add(new JLabel(item.getName()));
             for (String badge : getBadges(item)) {
+                nextPlaylists.add(badge);
                 b.add(Box.createHorizontalStrut(5));
                 b.add(new BadgeLabel(badge));
             }
@@ -267,6 +326,8 @@ public class MainGui {
         });
         queueListPanel.revalidate(); // Updates layout
         queueListPanel.repaint();    // Redraws panel
+
+        secondaryMonitorGui.updateSidePanel(nextPlaylists.stream().limit(5).toList());
     }
 
     private void createPlaylistList() {
@@ -319,10 +380,9 @@ public class MainGui {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        outerPanel.setPreferredSize(new Dimension(250, 0));
-
         outerPanel.add(scrollPane);
 
+        sidePanels[0] = outerPanel;
         frame.add(outerPanel, BorderLayout.LINE_START);
 
     }
@@ -424,7 +484,7 @@ public class MainGui {
                 }
 
             } else {
-                nowPlayingPanel.add(new JLabel("--- No song playing ---"));
+                nowPlayingPanel.add(new JLabel("- - -"));
             }
 
             nowPlayingPanel.add(Box.createHorizontalGlue());

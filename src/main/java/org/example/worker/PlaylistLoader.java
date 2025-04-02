@@ -1,6 +1,7 @@
-package org.example.api;
+package org.example.worker;
 
 import org.apache.hc.core5.http.ParseException;
+import org.example.api.Api;
 import org.example.models.PlaylistModel;
 import se.michaelthelin.spotify.SpotifyApiThreading;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
@@ -13,6 +14,10 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 public class PlaylistLoader {
+    private PlaylistLoader() {
+        // Prevent instantiation
+    }
+
     private static void loadPlaylistsInternal(Collection<PlaylistModel> playlists) throws IOException, ParseException, SpotifyWebApiException {
         for (PlaylistModel playlist : playlists) {
             if (!playlist.isChecked() || playlist.getTracks() != null) {
@@ -46,6 +51,13 @@ public class PlaylistLoader {
         }
     }
 
+    /**
+     * Loads songs of the given playlists synchronously.
+     * Playlists which already have their tracks loaded or are not checked will be skipped.
+     *
+     * @param playlists The collection of PlaylistModel objects to load.
+     * @return true if the playlists were loaded successfully, false otherwise.
+     */
     public static boolean loadPlaylists(Collection<PlaylistModel> playlists) {
         try {
             loadPlaylistsInternal(playlists);
@@ -55,6 +67,13 @@ public class PlaylistLoader {
         }
     }
 
+    /**
+     * Loads songs of the given playlists asynchronously.
+     * Playlists which already have their tracks loaded or are not checked will be skipped.
+     *
+     * @param playlists The collection of PlaylistModel objects to load.
+     * @return A CompletableFuture that will complete with true if the playlists were loaded successfully, false otherwise.
+     */
     public static CompletableFuture<Boolean> loadPlaylistsAsync(Collection<PlaylistModel> playlists) {
         return SpotifyApiThreading.executeAsync(() -> loadPlaylists(playlists));
     }

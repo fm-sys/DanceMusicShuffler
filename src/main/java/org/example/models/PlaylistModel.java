@@ -9,6 +9,7 @@ public class PlaylistModel {
     private final PlaylistSimplified playlist;
     private boolean checked = false;
     private boolean exclusive = false;
+    private double weight = 1.0;
     private ArrayList<PlaylistTrack> tracks = null;
 
     public PlaylistModel(PlaylistSimplified playlist) {
@@ -48,6 +49,22 @@ public class PlaylistModel {
     public boolean isExclusive() {
         return exclusive;
     }
+
+    /**
+     * Set the weight of the playlist. (default: 1.0)
+     * The weight is used to determine how often the playlist should be played.
+     */
+    public void setWeight(double weight) {
+        this.weight = weight;
+    }
+    /**
+     * Get the weight of the playlist. (default: 1.0)
+     * The weight is used to determine how often the playlist should be played.
+     */
+    public double getWeight() {
+        return weight;
+    }
+
 
     public void setTracks(ArrayList<PlaylistTrack> tracks) {
         this.tracks = tracks;

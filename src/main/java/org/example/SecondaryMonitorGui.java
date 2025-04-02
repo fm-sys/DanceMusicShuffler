@@ -2,6 +2,7 @@ package org.example;
 
 import org.example.gui.AlignHelper;
 import org.example.gui.BadgeLabel;
+import org.example.gui.HalfHeightLeftBorder;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,6 +16,8 @@ public class SecondaryMonitorGui {
     JLabel titleLabel;
     JLabel artistLabel;
     JPanel badgesPanel;
+
+    JPanel sidePanel;
 
     public SecondaryMonitorGui() {
 
@@ -61,6 +64,16 @@ public class SecondaryMonitorGui {
 
         frame.getContentPane().add(coverPanel, BorderLayout.CENTER);
 
+
+        sidePanel = new JPanel();
+        sidePanel.setBackground(Color.BLACK);
+        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
+        sidePanel.setPreferredSize(new Dimension(500, 0));
+        sidePanel.setBorder(new HalfHeightLeftBorder(Color.WHITE, 2));
+        frame.getContentPane().add(sidePanel, BorderLayout.LINE_END);
+
+
+
         // Get the available screen devices (monitors)
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] screens = ge.getScreenDevices();
@@ -105,6 +118,30 @@ public class SecondaryMonitorGui {
                 e.printStackTrace();
             }
         });
+    }
+
+    public void updateSidePanel(List<String> badges) {
+        sidePanel.removeAll();
+
+        sidePanel.add(Box.createVerticalGlue());
+
+        JLabel label = new JLabel("Nächste Tänze");
+        label.setFont(titleLabel.getFont().deriveFont(36.0f));
+        label.setForeground(Color.WHITE);
+        sidePanel.add(AlignHelper.center(label));
+
+        sidePanel.add(Box.createVerticalStrut(20));
+
+        for (String badge : badges) {
+            BadgeLabel badgeLabel = new BadgeLabel(badge);
+            badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
+            sidePanel.add(AlignHelper.center(badgeLabel));
+        }
+
+        sidePanel.add(Box.createVerticalGlue());
+
+        sidePanel.revalidate();
+        sidePanel.repaint();
     }
 
     private static BufferedImage makeRoundedCorner(BufferedImage image, int cornerRadius) {
