@@ -173,6 +173,15 @@ public class MainGui {
         exclusiveButton.addActionListener(e -> showExclusivePoolDialog());
         labeledPanelOptions.add(AlignHelper.left(exclusiveButton));
 
+        labeledPanelOptions.add(Box.createVerticalStrut(10));
+
+        JLabel weightsLabel = new JLabel("Configure how often a playlists is chosen:");
+        labeledPanelOptions.add(AlignHelper.left(weightsLabel));
+
+        JButton weightsButton = new JButton("Adjust weights");
+        weightsButton.addActionListener(e -> showWeightsDialog());
+        labeledPanelOptions.add(AlignHelper.left(weightsButton));
+
         centerPanel.add(Box.createVerticalStrut(10));
 
         JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2));
@@ -270,6 +279,46 @@ public class MainGui {
         });
 
         JScrollPane scrollPane = new JScrollPane(checkboxesPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        dialog.add(scrollPane);
+
+        dialog.setVisible(true);
+    }
+
+    private void showWeightsDialog() {
+        if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
+            JOptionPane.showMessageDialog(frame, "Please select playlists for the general pool first.");
+            return;
+        }
+
+        JDialog dialog = new JDialog(frame, "Adjust weights", true);
+        dialog.setLayout(new BoxLayout(dialog.getContentPane(), BoxLayout.Y_AXIS));
+        dialog.setSize(300, 200);
+        dialog.setLocationRelativeTo(frame);
+
+        JPanel weightsPanel = new JPanel();
+        weightsPanel.setLayout(new BoxLayout(weightsPanel, BoxLayout.Y_AXIS));
+
+        playlists.stream().filter(PlaylistModel::isChecked).forEach(playlist -> {
+            JLabel label = new JLabel(playlist.getPlaylist().getName());
+            JSpinner spinner = new JSpinner();
+            spinner.setModel(new SpinnerNumberModel(playlist.getWeight(), 0, 10, 0.1));
+            spinner.addChangeListener(e -> playlist.setWeight((double) spinner.getValue()));
+            spinner.setPreferredSize(new Dimension(50, spinner.getPreferredSize().height));
+            spinner.setMaximumSize(new Dimension(50, spinner.getPreferredSize().height));
+
+            Box b = Box.createHorizontalBox();
+            b.add(label);
+            b.add(Box.createHorizontalGlue());
+            b.add(spinner);
+
+            weightsPanel.add(b);
+            weightsPanel.add(Box.createVerticalStrut(5));
+        });
+
+        JScrollPane scrollPane = new JScrollPane(weightsPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
