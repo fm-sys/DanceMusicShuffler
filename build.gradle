@@ -1,12 +1,19 @@
 plugins {
     id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1' // For including the dependencies in the JAR
 }
 
 group = 'org.example'
-version = '1.0-SNAPSHOT'
+version = '0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'org.example.Main'
+    }
 }
 
 dependencies {
