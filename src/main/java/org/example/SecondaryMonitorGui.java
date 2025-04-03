@@ -125,7 +125,7 @@ public class SecondaryMonitorGui {
 
         sidePanel.add(Box.createVerticalGlue());
 
-        JLabel label = new JLabel("Nächste Tänze");
+        JLabel label = new JLabel("N\u00e4chste T\u00e4nze");
         label.setFont(titleLabel.getFont().deriveFont(36.0f));
         label.setForeground(Color.WHITE);
         sidePanel.add(AlignHelper.center(label));

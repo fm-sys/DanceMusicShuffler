@@ -455,7 +455,7 @@ public class MainGui {
 
     private void updateSelectAllCheckbox() {
         int selectedCount = (int) playlistsFiltered.stream().filter(PlaylistModel::isChecked).count();
-        selectAllCheckbox.setText(selectedCount + " von " + playlistsFiltered.size() + " ausgewählt");
+        selectAllCheckbox.setText(selectedCount + " von " + playlistsFiltered.size() + " ausgew\u00e4hlt");
         if (selectedCount == 0) {
             selectAllCheckbox.setSelected(false);
             selectAllCheckbox.setHalfSelected(false);
@@ -465,7 +465,7 @@ public class MainGui {
         } else {
             selectAllCheckbox.setSelected(true);
             selectAllCheckbox.setHalfSelected(false);
-            selectAllCheckbox.setText("Alle ausgewählt");
+            selectAllCheckbox.setText("Alle ausgew\u00e4hlt");
         }
     }
 
