@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'com.github.johnrengelman.shadow' version '8.1.1' // For including the dependencies in the JAR
+    id 'com.gradleup.shadow' version '8.3.6' // For including the dependencies in the JAR
 }
 
 group = 'org.example'
