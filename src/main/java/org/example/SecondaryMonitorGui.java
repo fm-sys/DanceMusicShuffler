@@ -3,6 +3,7 @@ package org.example;
 import org.example.gui.AlignHelper;
 import org.example.gui.BadgeLabel;
 import org.example.gui.HalfHeightLeftBorder;
+import org.example.util.PreventSleep;
 
 import javax.swing.*;
 import java.awt.*;
@@ -93,6 +94,8 @@ public class SecondaryMonitorGui {
 
         // Close operation
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        PreventSleep.startPreventingSleepLoop();
     }
 
     public void update(BufferedImage coverImage, String trackName, String artistName, List<String> badges) {
