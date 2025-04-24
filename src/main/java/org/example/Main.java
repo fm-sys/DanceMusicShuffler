@@ -35,6 +35,7 @@ public class Main {
         try {
             currentlyPlaying = Api.INSTANCE.getUsersCurrentlyPlayingTrack().build().execute();
         } catch (IOException | SpotifyWebApiException | ParseException e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
         SpotifyWindowTitle.searchSpotifyWindowInitial(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
