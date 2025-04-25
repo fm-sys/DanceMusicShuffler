@@ -64,6 +64,10 @@ public class Main {
                             doneCallback.run();
                         }
                     }
+                }).whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        System.err.println("Caught Exception: " + ex.getMessage());
+                    }
                 });
     }
 }

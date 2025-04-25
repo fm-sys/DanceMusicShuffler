@@ -66,6 +66,10 @@ public class Api {
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
             }
+        }).whenComplete((res, ex) -> {
+            if (ex != null) {
+                System.err.println("Caught Exception: " + ex.getMessage());
+            }
         });
     }
 
@@ -82,6 +86,10 @@ public class Api {
                     if (readyCallback != null) {
                         readyCallback.run();
                     }
+                }).whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        System.err.println("Caught Exception: " + ex.getMessage());
+                    }
                 });
     }
 
@@ -92,6 +100,10 @@ public class Api {
                     INSTANCE.setAccessToken(credentials.getAccessToken());
                     INSTANCE.setRefreshToken(credentials.getRefreshToken());
                     System.out.println("Refreshed token.");
+                }).whenComplete((res, ex) -> {
+                    if (ex != null) {
+                        System.err.println("Caught Exception: " + ex.getMessage());
+                    }
                 });
     }
 

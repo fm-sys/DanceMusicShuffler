@@ -63,6 +63,7 @@ public class PlaylistLoader {
             loadPlaylistsInternal(playlists);
             return true;
         } catch (IOException | SpotifyWebApiException | ParseException e) {
+            e.printStackTrace();
             return false;
         }
     }
