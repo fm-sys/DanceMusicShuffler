@@ -125,6 +125,10 @@ public class MainGui {
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("Dance Music Shuffler");
+        var icon = getClass().getResource("/icon48.png");
+        if (icon != null) {
+            frame.setIconImage(new ImageIcon(icon).getImage());
+        }
         frame.setMinimumSize(new Dimension(600, 300));
         frame.setSize(new Dimension(1000, 600));
         frame.setLocationByPlatform(true);

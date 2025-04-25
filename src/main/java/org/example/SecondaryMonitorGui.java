@@ -27,7 +27,10 @@ public class SecondaryMonitorGui {
         frame.setUndecorated(true);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
-
+        var icon = getClass().getResource("/icon48.png");
+        if (icon != null) {
+            frame.setIconImage(new ImageIcon(icon).getImage());
+        }
 
 
         JPanel coverPanel = new JPanel();
