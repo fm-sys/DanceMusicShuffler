@@ -25,8 +25,7 @@ public class DotLoadingIndicator extends JPanel {
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        // Draw dots on next line, bigger
-        g2.setFont(new Font("SansSerif", Font.BOLD, 16));
+        g2.setFont(new Font("Sans", Font.BOLD, 16));
         FontMetrics fmDots = g2.getFontMetrics();
         int x2 = (getWidth() - fmDots.stringWidth(dots)) / 2;
         int y2 = getHeight() / 2;
