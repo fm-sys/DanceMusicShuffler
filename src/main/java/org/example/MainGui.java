@@ -27,7 +27,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainGui {
