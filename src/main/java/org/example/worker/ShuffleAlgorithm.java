@@ -74,6 +74,7 @@ public class ShuffleAlgorithm {
             System.out.println("No allowed playlists available");
             return false;
         }
+        wasExclusive = chosenPlaylist.isExclusive();
 
         List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getTrack).filter(o -> !alreadyUsedTracks.contains(o)).toList();
         if (allowedTracks.isEmpty()) {
