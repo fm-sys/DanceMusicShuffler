@@ -31,6 +31,8 @@ public class Main {
         System.out.println("Authorization code flow finished!");
         System.out.println("Access token: " + Api.INSTANCE.getAccessToken());
 
+        SplashScreen splashScreen = new SplashScreen();
+
         CurrentlyPlaying currentlyPlaying;
         try {
             currentlyPlaying = Api.INSTANCE.getUsersCurrentlyPlayingTrack().build().execute();
@@ -40,7 +42,10 @@ public class Main {
         }
         SpotifyWindowTitle.searchSpotifyWindowInitial(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
 
-        getPlaylists(() -> new MainGui(playlists));
+        getPlaylists(() -> {
+            splashScreen.dispose();
+            new MainGui(playlists);
+        });
     }
 
     private static void getPlaylists(Runnable doneCallback) {

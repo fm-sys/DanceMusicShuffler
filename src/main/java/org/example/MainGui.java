@@ -130,6 +130,8 @@ public class MainGui {
         frame.setLocationByPlatform(true);
         frame.setVisible(true);
         loadAndShuffleButton.requestFocusInWindow();
+        SwingUtilities.invokeLater(frame::toFront);
+
     }
 
     private void createCenterOptionsPanel() {
