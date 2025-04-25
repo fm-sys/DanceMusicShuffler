@@ -27,6 +27,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainGui {
@@ -384,7 +385,7 @@ public class MainGui {
         JPanel outerPanel = new JPanel();
         outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
 
-        playlistsFilterTextField = new HintTextField("Filter playlists by title/description");
+        playlistsFilterTextField = new HintTextField("Filter playlists by title/description/owner");
         playlistsFilterTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, playlistsFilterTextField.getPreferredSize().height));
         playlistsFilterTextField.addCaretListener(e -> {
 
@@ -400,7 +401,8 @@ public class MainGui {
                 playlistsFiltered.clear();
                 for (PlaylistModel playlist : playlists) {
                     if (playlist.getPlaylist().getName().toLowerCase().contains(filterText.toLowerCase().trim()) ||
-                            playlist.getPlaylist().getDescription().toLowerCase().contains(filterText.toLowerCase().trim())) {
+                            playlist.getPlaylist().getDescription().toLowerCase().contains(filterText.toLowerCase().trim()) ||
+                            playlist.getPlaylist().getOwner().getDisplayName().toLowerCase().contains(filterText.toLowerCase().trim())) {
                         playlistsFiltered.add(playlist);
                     }
                 }
