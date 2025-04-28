@@ -26,6 +26,10 @@ public class ShuffleAlgorithm {
         this.playlists = playlists;
     }
 
+    public boolean wasAddedByShuffleAlgorithm(IPlaylistItem track) {
+        return alreadyUsedTracks.contains(track);
+    }
+
     private ArrayList<PlaylistModel> getAllowedPlaylists() {
         ArrayList<PlaylistModel> allowedPlaylists = new ArrayList<>();
 

@@ -370,7 +370,11 @@ public class MainGui {
         queue.forEach(item -> {
             Box b = Box.createHorizontalBox();
             b.add(Box.createRigidArea(new Dimension(5, lineHeight)));
-            b.add(new JLabel(item.getName()));
+            JLabel label = new JLabel(item.getName());
+            if (!shuffleAlgorithm.wasAddedByShuffleAlgorithm(item)) {
+                label.setForeground(Color.GRAY);
+            }
+            b.add(label);
             for (String badge : getBadges(item)) {
                 nextPlaylists.add(badge);
                 b.add(Box.createHorizontalStrut(5));
