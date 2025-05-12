@@ -13,6 +13,7 @@ import java.util.List;
 
 public class SecondaryMonitorGui {
 
+    JFrame frame;
     JLabel cover;
     JLabel titleLabel;
     JLabel artistLabel;
@@ -23,7 +24,7 @@ public class SecondaryMonitorGui {
     public SecondaryMonitorGui() {
 
         // Create a JFrame
-        JFrame frame = new JFrame("Fullscreen on Secondary Monitor");
+        frame = new JFrame("Fullscreen on Secondary Monitor");
         frame.setUndecorated(true);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -76,21 +77,26 @@ public class SecondaryMonitorGui {
         sidePanel.setBorder(new HalfHeightLeftBorder(Color.WHITE, 2));
         frame.getContentPane().add(sidePanel, BorderLayout.LINE_END);
 
+        launchSecondaryMonitorGui();
+    }
 
+    public boolean launchSecondaryMonitorGui() {
+        if (frame.isVisible()) {
+            frame.toFront();
+            return true;
+        }
 
         // Get the available screen devices (monitors)
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] screens = ge.getScreenDevices();
+        GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
 
         // Ensure there is more than one monitor
         if (screens.length < 2) {
             System.out.println("Secondary monitor not detected.");
-            return;
+            return false;
         }
 
         // Select the secondary monitor (index 1)
         GraphicsDevice secondaryScreen = screens[1];
-//        secondaryScreen.setFullScreenWindow(frame);
         Rectangle screenBounds = secondaryScreen.getDefaultConfiguration().getBounds();
         frame.setBounds(screenBounds);
         frame.setVisible(true);
@@ -99,6 +105,7 @@ public class SecondaryMonitorGui {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         PreventSleep.startPreventingSleepLoop();
+        return true;
     }
 
     public void update(BufferedImage coverImage, String trackName, String artistName, List<String> badges) {

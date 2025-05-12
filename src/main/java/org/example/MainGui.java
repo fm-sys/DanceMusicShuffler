@@ -222,6 +222,24 @@ public class MainGui {
 
         centerPanel.add(Box.createVerticalStrut(10));
 
+        JPanel labeledPanelMonitor = new JPanel(new GridLayout(0, 1));
+        labeledPanelMonitor.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Secondary Monitor"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        labeledPanelMonitor.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
+        centerPanel.add(labeledPanelMonitor);
+
+        JButton launchGuiButton = new JButton("Open secondary monitor GUI");
+        launchGuiButton.addActionListener(e -> {
+            if (!secondaryMonitorGui.launchSecondaryMonitorGui()) {
+                JOptionPane.showMessageDialog(frame, "Secondary monitor not detected.");
+            }
+        });
+        labeledPanelMonitor.add(launchGuiButton);
+
+        centerPanel.add(Box.createVerticalStrut(10));
+
         loadAndShuffleButton = new JButton("Load Playlists and Shuffle");
         loadAndShuffleButton.addActionListener(e -> {
             if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
