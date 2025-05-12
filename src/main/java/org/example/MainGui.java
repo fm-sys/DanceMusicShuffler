@@ -204,7 +204,7 @@ public class MainGui {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue());
+            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), filterText);
         });
         labeledPanelConfig.add(storeButton);
 
@@ -214,6 +214,7 @@ public class MainGui {
             if (params != null) {
                 songNumberSpinner.setValue(params.count);
                 cooldownSpinner.setValue(params.cooldown);
+                playlistsFilterTextField.setText(params.searchString);
                 recreatePlaylistsList();
             }
         });

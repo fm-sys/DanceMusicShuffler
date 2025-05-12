@@ -13,16 +13,18 @@ public class PersistentPreferences {
 
     int count = 0;
     int cooldown = 0;
+    String searchString = null;
     List<PersistentPlaylistModel> playlists = null;
 
     public PersistentPreferences() {
         // Default constructor for Jackson
     }
 
-    public PersistentPreferences(List<PlaylistModel> playlists, int count, int cooldown) {
+    public PersistentPreferences(List<PlaylistModel> playlists, MainGuiParams params) {
         this.playlists = playlists.stream().map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
-        this.count = count;
-        this.cooldown = cooldown;
+        this.count = params.count;
+        this.cooldown = params.cooldown;
+        this.searchString = params.searchString;
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -47,10 +49,12 @@ public class PersistentPreferences {
     public static class MainGuiParams {
         public int count;
         public int cooldown;
+        public String searchString;
 
-        public MainGuiParams(int count, int cooldown) {
+        public MainGuiParams(int count, int cooldown, String searchString) {
             this.count = count;
             this.cooldown = cooldown;
+            this.searchString = searchString;
         }
     }
 
@@ -77,15 +81,15 @@ public class PersistentPreferences {
                     }
                 }
             }
-            return new MainGuiParams(preferences.count, preferences.cooldown);
+            return new MainGuiParams(preferences.count, preferences.cooldown, preferences.searchString);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public static void store(List<PlaylistModel> playlists, int count, int cooldown) {
-        PersistentPreferences preferences = new PersistentPreferences(playlists, count, cooldown);
+    public static void store(List<PlaylistModel> playlists, int count, int cooldown, String searchString) {
+        PersistentPreferences preferences = new PersistentPreferences(playlists, new MainGuiParams(count, cooldown, searchString));
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
