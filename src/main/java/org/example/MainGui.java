@@ -27,7 +27,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Collectors;
 
 public class MainGui {
 
@@ -544,7 +543,7 @@ public class MainGui {
                             try {
                                 URI url = new URI(image.getUrl());
                                 BufferedImage image1 = ImageIO.read(url.toURL());
-                                secondaryMonitorGui.update(image1, track.getName(), Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")), badges);
+                                secondaryMonitorGui.update(image1, track, badges);
                             } catch (Exception exp) {
                                 exp.printStackTrace();
                             }
