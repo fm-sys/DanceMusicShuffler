@@ -123,8 +123,8 @@ public class SecondaryMonitorGui {
 
         frame.setVisible(true);
 
-        // Close operation
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // Close operation - don't exit the whole application
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         PreventSleep.startPreventingSleepLoop();
 
@@ -135,6 +135,13 @@ public class SecondaryMonitorGui {
                 progressBar.setProgress((float) elapsedTime / (float) duration);
             }
         }).start();
+
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                PreventSleep.stopPreventingSleepLoop();
+            }
+        });
 
         return true;
     }
