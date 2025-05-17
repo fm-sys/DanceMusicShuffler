@@ -61,11 +61,11 @@ public class ShuffleAlgorithm {
         throw new RuntimeException("We failed at random"); // Sollte nie passieren
     }
 
-    public CompletableFuture<Boolean> shuffleAsync(int count, int cooldown) {
-        return SpotifyApiThreading.executeAsync(() -> shuffle(count, cooldown));
+    public CompletableFuture<Boolean> shuffleAsync(int count, int cooldown, String deviceId) {
+        return SpotifyApiThreading.executeAsync(() -> shuffle(count, cooldown, deviceId));
     }
 
-    public boolean shuffle(int count, int cooldown) {
+    public boolean shuffle(int count, int cooldown, String deviceId) {
         recentlyUsedPlaylists.setMaxSize(cooldown);
 
         if (count <= 0) {
@@ -92,9 +92,9 @@ public class ShuffleAlgorithm {
         alreadyUsedTracks.add(chosenTrack);
 
         try {
-            Api.INSTANCE.addItemToUsersPlaybackQueue(chosenTrack.getUri()) .build().execute();
+            Api.INSTANCE.addItemToUsersPlaybackQueue(chosenTrack.getUri()).device_id(deviceId).build().execute();
             System.out.println("Added track to queue: " + chosenTrack.getName());
-            return shuffle(count - 1, cooldown);
+            return shuffle(count - 1, cooldown, deviceId);
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             e.printStackTrace();
             return false;

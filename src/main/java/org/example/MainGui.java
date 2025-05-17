@@ -1,40 +1,50 @@
 package org.example;
 
+import com.google.gson.JsonArray;
+import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
+import org.example.gui.*;
+import org.example.models.DeviceDisplayable;
+import org.example.util.PopupMenuOpenedListener;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
 import org.example.api.SpotifyWindowTitle;
-import org.example.gui.AlignHelper;
-import org.example.gui.BadgeLabel;
-import org.example.gui.HintTextField;
-import org.example.gui.TristateCheckBox;
 import org.example.models.PlaylistModel;
 import org.example.worker.ShuffleAlgorithm;
+import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
+import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 public class MainGui {
+
+    public static final int SPOTIFY_WEB_API_DELAY = 250;
 
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
 
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
     ShuffleAlgorithm shuffleAlgorithm;
+
+    String activeDeviceId = null;
 
     JFrame frame;
 
@@ -73,12 +83,6 @@ public class MainGui {
         frame = new JFrame();
         frame.setLayout(new BorderLayout());
 
-//        panel = new JPanel();
-//        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-//        //panel.setLayout(new GridLayout(0, 1));
-//
-//        panel.add(label, BorderLayout.CENTER);
-//
         createPlaylistList();
         createQueueList();
         createCenterOptionsPanel();
@@ -86,24 +90,18 @@ public class MainGui {
 
         new Timer(1000, evt -> {
             if (SpotifyWindowTitle.titleChanged()) {
-                Timer timer = new Timer(3000, e -> updateNowPlaying());
+                Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e -> updateNowPlaying());
                 timer.setRepeats(false);
                 timer.start();
             }
         }).start();
-
-//        JPanel badgePanel = new JPanel();
-//        BadgeLabel label1 = new BadgeLabel("bla");
-//        label1.setText("This is a lable");
-//        badgePanel.add(label);
-
-        //frame.add(badgePanel, BorderLayout.LINE_END);
 
 
         frame.addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowGainedFocus(WindowEvent e) {
                 updateNowPlaying();
+                updatePlaybackState();
             }
 
             @Override
@@ -231,8 +229,11 @@ public class MainGui {
 
         JButton launchGuiButton = new JButton("Open secondary monitor GUI");
         launchGuiButton.addActionListener(e -> {
-            if (!secondaryMonitorGui.launchSecondaryMonitorGui()) {
-                JOptionPane.showMessageDialog(frame, "Secondary monitor not detected.");
+            if (!secondaryMonitorGui.launchSecondaryMonitorGui(false)) {
+                int result = JOptionPane.showConfirmDialog(frame, "Secondary monitor not detected. Open Anyway?", "Warning", JOptionPane.YES_NO_OPTION);
+                if (result == JOptionPane.YES_OPTION) {
+                    secondaryMonitorGui.launchSecondaryMonitorGui(true);
+                }
             }
         });
         labeledPanelMonitor.add(launchGuiButton);
@@ -252,7 +253,7 @@ public class MainGui {
             PlaylistLoader.loadPlaylistsAsync(playlists)
                     .thenAccept(success -> {
                         if (success) {
-                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue()).thenAccept(result -> restoreLoadAndShuffleButton());
+                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), activeDeviceId).thenAccept(result -> restoreLoadAndShuffleButton());
                         } else {
                             JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
                             restoreLoadAndShuffleButton();
@@ -501,10 +502,131 @@ public class MainGui {
     private void createNowPlaying() {
         nowPlayingPanel = new JPanel();
         nowPlayingPanel.setLayout(new BoxLayout(nowPlayingPanel, BoxLayout.X_AXIS));
-        nowPlayingPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        nowPlayingPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
         nowPlayingPanel.setBackground(Color.lightGray);
-        frame.add(nowPlayingPanel, BorderLayout.PAGE_END);
+
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BorderLayout());
+
+        JPanel buttonPanel = createPlaybackControlButtons();
+        bottomPanel.add(buttonPanel, BorderLayout.NORTH);
+        bottomPanel.add(nowPlayingPanel, BorderLayout.SOUTH);
+
+        frame.add(bottomPanel, BorderLayout.PAGE_END);
         updateNowPlaying();
+    }
+
+    private JPanel createPlaybackControlButtons() {
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(Color.lightGray);
+
+        JButton backButton = new JButton("\u23EE");   // ⏮
+        backButton.setOpaque(false);
+        backButton.addActionListener(e -> Api.INSTANCE.skipUsersPlaybackToPreviousTrack().build().executeAsync().thenAccept(
+                response -> secondaryMonitorGui.setPaused(false)
+        ));
+        buttonPanel.add(backButton);
+
+        JButton playButton = new JButton("\u25B6");   // ▶
+        playButton.setOpaque(false);
+        buttonPanel.add(playButton);
+        playButton.addActionListener(e -> Api.INSTANCE.startResumeUsersPlayback().device_id(activeDeviceId).build().executeAsync().whenComplete(
+                (res, ex) -> {
+                    Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e1 -> updatePlaybackState());
+                    timer.setRepeats(false);
+                    timer.start();
+
+                    if (ex != null) {
+                        System.err.println("startResumeUsersPlayback: Caught Exception: " + ex.getMessage());
+                    }
+                }
+        ));
+
+        JButton pauseButton = new JButton("\u23F8");  // ⏸
+        pauseButton.setOpaque(false);
+        buttonPanel.add(pauseButton);
+        pauseButton.addActionListener(e -> Api.INSTANCE.pauseUsersPlayback().build().executeAsync().whenComplete(
+                (res, ex) -> secondaryMonitorGui.setPaused(true)
+        ));
+
+        JButton forwardButton = new JButton("\u23ED"); // ⏭
+        forwardButton.setOpaque(false);
+        forwardButton.addActionListener(e -> Api.INSTANCE.skipUsersPlaybackToNextTrack().build().executeAsync().thenAccept(
+                response -> secondaryMonitorGui.setPaused(false)
+        ));
+        buttonPanel.add(forwardButton);
+
+        JComboBox<DeviceDisplayable> devicesComboBox = new JComboBox<>();
+        devicesComboBox.setOpaque(false);
+
+        devicesComboBox.setPrototypeDisplayValue(new DeviceDisplayable(new Device.Builder().setName("A device name").build()));
+
+        devicesComboBox.addPopupMenuListener(new PopupMenuOpenedListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                updateDevicesComboBox(devicesComboBox);
+            }
+        });
+
+        devicesComboBox.addActionListener(e -> {
+            DeviceDisplayable selected = (DeviceDisplayable) devicesComboBox.getSelectedItem();
+            if (selected != null) {
+                System.out.println("Selected device: " + selected.device().getName());
+                activeDeviceId = selected.device().getId();
+                if (!selected.device().getIs_active()) {
+                    JsonArray array = new JsonArray();
+                    array.add(selected.device().getId());
+                    Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
+                            (res, ex) -> {
+                                if (ex != null) {
+                                    System.err.println("Caught Exception: " + ex.getMessage());
+                                } else {
+                                    System.out.println("Transferred playback to device: " + selected.device().getName());
+                                }
+                            }
+                    );
+                }
+            }
+        });
+
+        updateDevicesComboBox(devicesComboBox);
+
+        buttonPanel.add(devicesComboBox);
+        return buttonPanel;
+    }
+
+    private static void updateDevicesComboBox(JComboBox<DeviceDisplayable> devicesComboBox) {
+        java.util.List<DeviceDisplayable> people = fetchDevices();
+        devicesComboBox.removeAllItems();
+        if (people != null) {
+            for (DeviceDisplayable person : people) {
+                devicesComboBox.addItem(person);
+            }
+        }
+    }
+
+    private static java.util.List<DeviceDisplayable> fetchDevices() {
+        try {
+            Device[] devices = Api.INSTANCE.getUsersAvailableDevices().build().execute();
+            return Stream.of(devices).map(DeviceDisplayable::new).toList();
+        } catch (IOException | SpotifyWebApiException | ParseException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void updatePlaybackState() {
+        Api.INSTANCE.getUsersCurrentlyPlayingTrack().build().executeAsync().thenAccept(currentlyPlaying -> {
+            if (currentlyPlaying != null) {
+                secondaryMonitorGui.setPaused(!currentlyPlaying.getIs_playing());
+                secondaryMonitorGui.setProgress(currentlyPlaying.getProgress_ms(), currentlyPlaying.getItem().getDurationMs());
+            }
+        }).whenComplete((res, ex) -> {
+            if (ex != null) {
+                System.err.println("Caught Exception: " + ex.getMessage());
+            }
+        });
     }
 
     private void updateNowPlaying() {

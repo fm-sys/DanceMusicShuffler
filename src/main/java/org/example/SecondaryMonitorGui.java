@@ -19,18 +19,19 @@ import java.util.stream.Collectors;
 
 public class SecondaryMonitorGui {
 
-    JFrame frame;
-    JLabel cover;
-    JLabel titleLabel;
-    JLabel artistLabel;
-    JPanel badgesPanel;
+    private final JFrame frame;
+    private final JLabel cover;
+    private final JLabel titleLabel;
+    private final JLabel artistLabel;
+    private final JPanel badgesPanel;
 
-    JPanel sidePanel;
+    private final JPanel sidePanel;
 
-    AnimatedWavyProgressBar progressBar;
-    String currentTrackId = null;
-    long startTimestamp = 0;
-    long duration = 0;
+    private final AnimatedWavyProgressBar progressBar;
+    private String currentTrackId = null;
+    private long startTimestamp = 0;
+    private long duration = 0;
+    private boolean paused = false;
 
 
     public SecondaryMonitorGui() {
@@ -95,10 +96,10 @@ public class SecondaryMonitorGui {
         progressBar = new AnimatedWavyProgressBar();
         frame.getContentPane().add(progressBar, BorderLayout.PAGE_END);
 
-        launchSecondaryMonitorGui();
+        launchSecondaryMonitorGui(false);
     }
 
-    public boolean launchSecondaryMonitorGui() {
+    public boolean launchSecondaryMonitorGui(boolean force) {
         if (frame.isVisible()) {
             frame.toFront();
             return true;
@@ -108,15 +109,18 @@ public class SecondaryMonitorGui {
         GraphicsDevice[] screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
 
         // Ensure there is more than one monitor
-        if (screens.length < 2) {
+        if (screens.length < 2 && !force) {
             System.out.println("Secondary monitor not detected.");
             return false;
         }
 
-        // Select the secondary monitor (index 1)
-        GraphicsDevice secondaryScreen = screens[1];
-        Rectangle screenBounds = secondaryScreen.getDefaultConfiguration().getBounds();
-        frame.setBounds(screenBounds);
+        if (screens.length > 1) {
+            // Select the secondary monitor (index 1)
+            GraphicsDevice secondaryScreen = screens[1];
+            Rectangle screenBounds = secondaryScreen.getDefaultConfiguration().getBounds();
+            frame.setBounds(screenBounds);
+        }
+
         frame.setVisible(true);
 
         // Close operation
@@ -125,8 +129,11 @@ public class SecondaryMonitorGui {
         PreventSleep.startPreventingSleepLoop();
 
         new Timer(16, e -> {
-            long elapsedTime = System.currentTimeMillis() - startTimestamp;
-            progressBar.setProgress((float) elapsedTime / (float) duration);
+            progressBar.setPaused(paused);
+            if (!paused) {
+                long elapsedTime = System.currentTimeMillis() - startTimestamp;
+                progressBar.setProgress((float) elapsedTime / (float) duration);
+            }
         }).start();
 
         return true;
@@ -185,6 +192,15 @@ public class SecondaryMonitorGui {
 
         sidePanel.revalidate();
         sidePanel.repaint();
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
+
+    public void setProgress(long progressMs, long durationMs) {
+        this.startTimestamp = System.currentTimeMillis() - progressMs;
+        this.duration = durationMs;
     }
 
     private static BufferedImage makeRoundedCorner(BufferedImage image) {

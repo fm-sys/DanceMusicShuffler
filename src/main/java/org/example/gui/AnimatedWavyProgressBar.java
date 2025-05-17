@@ -11,6 +11,7 @@ public class AnimatedWavyProgressBar extends JComponent {
 
     private float progress = 0.0f; // Current progress (0.0 to 1.0)
     private float waveOffset = 0;
+    private boolean paused = false;
 
     public AnimatedWavyProgressBar() {
         setPreferredSize(new Dimension(500, 80));
@@ -24,6 +25,11 @@ public class AnimatedWavyProgressBar extends JComponent {
 
     public void setProgress(float p) {
         this.progress = Math.max(0, Math.min(1, p));
+        repaint();
+    }
+
+    public void setPaused(boolean paused) {
+        this.paused = paused;
         repaint();
     }
 
@@ -43,11 +49,12 @@ public class AnimatedWavyProgressBar extends JComponent {
         g2.setStroke(new BasicStroke(SCALE));
 
         float wavelength = SCALE * 10f;
+        float waveAmplitude = paused ? 0 : SCALE;
 
         Path2D wavePath = new Path2D.Float();
         for (int x = 0; x < progressX; x++) {
             double radians = (x + waveOffset * wavelength) / wavelength * 2 * Math.PI;
-            float y = Math.round(centerY + (float) Math.sin(radians) * SCALE);
+            float y = Math.round(centerY + (float) Math.sin(radians) * waveAmplitude);
 
             if (x == 0) {
                 wavePath.moveTo(x, y);
