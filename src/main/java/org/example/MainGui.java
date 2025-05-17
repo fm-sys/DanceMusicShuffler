@@ -213,7 +213,7 @@ public class MainGui {
 
         JButton storeButton = new JButton("\u2193   Store configuration");
         storeButton.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(frame, "This will overwrite any existing configuration. Do you want to continue?", "Warning", JOptionPane.YES_NO_OPTION);
+            int result = JOptionPane.showConfirmDialog(frame, "This will overwrite any existing configuration. Do you want to continue?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
@@ -239,7 +239,7 @@ public class MainGui {
         JButton launchGuiButton = new JButton("Open secondary monitor GUI");
         launchGuiButton.addActionListener(e -> {
             if (!secondaryMonitorGui.launchSecondaryMonitorGui(false)) {
-                int result = JOptionPane.showConfirmDialog(frame, "Secondary monitor not detected. Open Anyway?", "Warning", JOptionPane.YES_NO_OPTION);
+                int result = JOptionPane.showConfirmDialog(frame, "Secondary monitor not detected. Open Anyway?", "No second monitor", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
                     secondaryMonitorGui.launchSecondaryMonitorGui(true);
                 }
