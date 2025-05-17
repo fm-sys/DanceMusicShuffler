@@ -190,23 +190,13 @@ public class MainGui {
 
         JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2));
         labeledPanelConfig.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Store/Load Configuration"),
+                BorderFactory.createTitledBorder("Load/Store Configuration"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
         labeledPanelConfig.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         centerPanel.add(labeledPanelConfig);
 
-        JButton storeButton = new JButton("Store configuration");
-        storeButton.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(frame, "This will overwrite any existing configuration. Do you want to continue?", "Warning", JOptionPane.YES_NO_OPTION);
-            if (result != JOptionPane.YES_OPTION) {
-                return;
-            }
-            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), filterText, showSideSheetCheckbox.isSelected());
-        });
-        labeledPanelConfig.add(storeButton);
-
-        JButton loadButton = new JButton("Load configuration");
+        JButton loadButton = new JButton("\u2191   Load configuration");
         loadButton.addActionListener(e -> {
             PersistentPreferences.MainGuiParams params = PersistentPreferences.load(playlists);
             if (params != null) {
@@ -219,6 +209,16 @@ public class MainGui {
             }
         });
         labeledPanelConfig.add(loadButton);
+
+        JButton storeButton = new JButton("\u2193   Store configuration");
+        storeButton.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(frame, "This will overwrite any existing configuration. Do you want to continue?", "Warning", JOptionPane.YES_NO_OPTION);
+            if (result != JOptionPane.YES_OPTION) {
+                return;
+            }
+            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), filterText, showSideSheetCheckbox.isSelected());
+        });
+        labeledPanelConfig.add(storeButton);
 
         centerPanel.add(Box.createVerticalStrut(10));
 
