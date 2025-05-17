@@ -65,7 +65,7 @@ public class AnimatedWavyProgressBar extends JComponent {
         g2.draw(wavePath);
 
         // Draw remaining gray straight line
-        g2.setColor(new Color(100, 100, 100));
+        g2.setColor(Color.GRAY);
         g2.drawLine((int) progressX, centerY, width, centerY);
 
         // Draw vertical capsule-shaped thumb

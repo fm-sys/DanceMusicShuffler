@@ -1,16 +1,13 @@
 package org.example;
 
-import org.example.gui.AlignHelper;
-import org.example.gui.AnimatedWavyProgressBar;
-import org.example.gui.BadgeLabel;
-import org.example.gui.HalfHeightLeftBorder;
+import org.example.gui.*;
+import org.example.util.ImageUtils;
 import org.example.util.PreventSleep;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +15,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class SecondaryMonitorGui {
+
+    private final BackgroundPanel backgroundPanel;
 
     private final JFrame frame;
     private final JLabel cover;
@@ -40,8 +39,10 @@ public class SecondaryMonitorGui {
         frame = new JFrame("Fullscreen on Secondary Monitor");
         frame.setUndecorated(true);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        frame.getContentPane().setBackground(Color.BLACK);
 
+        backgroundPanel = new BackgroundPanel();
+        backgroundPanel.setLayout(new BorderLayout());
+        frame.setContentPane(backgroundPanel);
 
         var icon = getClass().getResource("/icon48.png");
         if (icon != null) {
@@ -50,7 +51,7 @@ public class SecondaryMonitorGui {
 
 
         JPanel coverPanel = new JPanel();
-        coverPanel.setBackground(Color.BLACK);
+        coverPanel.setOpaque(false);
         coverPanel.setLayout(new BoxLayout(coverPanel, BoxLayout.Y_AXIS));
 
         coverPanel.add(Box.createVerticalGlue());
@@ -76,7 +77,7 @@ public class SecondaryMonitorGui {
 
         badgesPanel = new JPanel();
         badgesPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 20));
-        badgesPanel.setBackground(Color.BLACK);
+        badgesPanel.setOpaque(false);
         badgesPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         coverPanel.add(badgesPanel);
 
@@ -86,7 +87,7 @@ public class SecondaryMonitorGui {
 
 
         sidePanel = new JPanel();
-        sidePanel.setBackground(Color.BLACK);
+        sidePanel.setOpaque(false);
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         sidePanel.setPreferredSize(new Dimension(500, 0));
         sidePanel.setBorder(new HalfHeightLeftBorder(Color.WHITE, 2));
@@ -143,14 +144,19 @@ public class SecondaryMonitorGui {
             }
         });
 
+        SwingUtilities.invokeLater(frame::toFront);
+
         return true;
     }
 
     public void update(BufferedImage coverImage, Track track, List<String> badges) {
         SwingUtilities.invokeLater(() -> {
             try {
-                BufferedImage roundedImage = makeRoundedCorner(coverImage);
+                BufferedImage roundedImage = ImageUtils.makeRoundedCorner(coverImage, 50);
                 cover.setIcon(new ImageIcon(roundedImage));
+
+                backgroundPanel.setBackgroundImage(ImageUtils.dimImage(ImageUtils.blurWithEdgeExtension(coverImage, 150), 0.5f));
+
                 titleLabel.setText(track.getName());
                 artistLabel.setText(Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")));
 
@@ -210,20 +216,6 @@ public class SecondaryMonitorGui {
         this.duration = durationMs;
     }
 
-    private static BufferedImage makeRoundedCorner(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
 
-        BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2 = output.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setClip(new RoundRectangle2D.Float(0, 0, width, height, 50, 50));
-
-        // Draw the original image within the rounded mask
-        g2.drawImage(image, 0, 0, null);
-        g2.dispose();
-
-        return output;
-    }
 
 }
