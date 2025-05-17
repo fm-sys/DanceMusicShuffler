@@ -3,6 +3,7 @@ package org.example.worker;
 import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
 import org.example.models.PlaylistModel;
+import org.example.models.UsedTrack;
 import org.example.util.FixedSizeQueue;
 import se.michaelthelin.spotify.SpotifyApiThreading;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
@@ -17,7 +18,7 @@ public class ShuffleAlgorithm {
     ArrayList<PlaylistModel> playlists;
 
     final FixedSizeQueue<PlaylistModel> recentlyUsedPlaylists = new FixedSizeQueue<>(0);
-    final ArrayList<IPlaylistItem> alreadyUsedTracks = new ArrayList<>();
+    final ArrayList<UsedTrack> alreadyUsedTracks = new ArrayList<>();
 
     boolean wasExclusive = false;
 
@@ -26,8 +27,17 @@ public class ShuffleAlgorithm {
         this.playlists = playlists;
     }
 
-    public boolean wasAddedByShuffleAlgorithm(IPlaylistItem track) {
-        return alreadyUsedTracks.contains(track);
+    public UsedTrack getUsedTrackIfExists(IPlaylistItem track) {
+        for (UsedTrack usedTrack : alreadyUsedTracks) {
+            if (usedTrack.track().getUri().equals(track.getUri())) {
+                return usedTrack;
+            }
+        }
+        return null;
+    }
+
+    public boolean wasNotShuffled(IPlaylistItem track) {
+        return getUsedTrackIfExists(track) == null;
     }
 
     private ArrayList<PlaylistModel> getAllowedPlaylists() {
@@ -80,7 +90,7 @@ public class ShuffleAlgorithm {
         }
         wasExclusive = chosenPlaylist.isExclusive();
 
-        List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getTrack).filter(o -> !alreadyUsedTracks.contains(o)).toList();
+        List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getTrack).filter(this::wasNotShuffled).toList();
         if (allowedTracks.isEmpty()) {
             System.out.println("No allowed tracks available in playlist: " + chosenPlaylist.getPlaylist().getName());
             return false;
@@ -89,7 +99,7 @@ public class ShuffleAlgorithm {
         IPlaylistItem chosenTrack = allowedTracks.get(new Random().nextInt(allowedTracks.size()));
 
         recentlyUsedPlaylists.add(chosenPlaylist);
-        alreadyUsedTracks.add(chosenTrack);
+        alreadyUsedTracks.add(new UsedTrack(chosenTrack, chosenPlaylist));
 
         try {
             Api.INSTANCE.addItemToUsersPlaybackQueue(chosenTrack.getUri()).device_id(deviceId).build().execute();

@@ -184,7 +184,7 @@ public class SecondaryMonitorGui {
         });
     }
 
-    public void updateSidePanel(List<String> badges) {
+    public void updateSidePanel(List<List<String>> badges) {
         sidePanel.removeAll();
 
         sidePanel.add(Box.createVerticalGlue());
@@ -196,10 +196,23 @@ public class SecondaryMonitorGui {
 
         sidePanel.add(Box.createVerticalStrut(20));
 
-        for (String badge : badges) {
-            BadgeLabel badgeLabel = new BadgeLabel(badge);
+        for (List<String> badge : badges) {
+            Box b = Box.createHorizontalBox();
+            b.add(Box.createHorizontalGlue());
+
+            BadgeLabel badgeLabel = new BadgeLabel(badge.getFirst());
             badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
-            sidePanel.add(AlignHelper.center(badgeLabel));
+            b.add(badgeLabel);
+
+            if (badge.size() > 1) {
+                JLabel moreLabel = new JLabel(" + " + (badge.size() - 1));
+                moreLabel.setForeground(Color.WHITE);
+                moreLabel.setFont(moreLabel.getFont().deriveFont(24.0f));
+                b.add(moreLabel);
+            }
+
+            b.add(Box.createHorizontalGlue());
+            sidePanel.add(b);
         }
 
         sidePanel.add(Box.createVerticalGlue());

@@ -5,6 +5,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
+import org.example.models.UsedTrack;
 import org.example.util.PopupMenuOpenedListener;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
@@ -261,7 +262,11 @@ public class MainGui {
             PlaylistLoader.loadPlaylistsAsync(playlists)
                     .thenAccept(success -> {
                         if (success) {
-                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), activeDeviceId).thenAccept(result -> restoreLoadAndShuffleButton());
+                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), activeDeviceId).thenAccept(result -> {
+                                Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e1 -> restoreLoadAndShuffleButton());
+                                timer.setRepeats(false);
+                                timer.start();
+                            });
                         } else {
                             JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
                             restoreLoadAndShuffleButton();
@@ -392,18 +397,21 @@ public class MainGui {
         queueListPanel.removeAll();
 
         int lineHeight = calculateBadgeHeight();
-        ArrayList<String> nextPlaylists = new ArrayList<>();
+        java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
 
         queue.forEach(item -> {
             Box b = Box.createHorizontalBox();
             b.add(Box.createRigidArea(new Dimension(5, lineHeight)));
             JLabel label = new JLabel(item.getName());
-            if (!shuffleAlgorithm.wasAddedByShuffleAlgorithm(item)) {
+            if (shuffleAlgorithm.wasNotShuffled(item)) {
                 label.setForeground(Color.GRAY);
             }
             b.add(label);
-            for (String badge : getBadges(item)) {
-                nextPlaylists.add(badge);
+            ArrayList<String> badges = getBadges(item);
+            if (!badges.isEmpty()) {
+                nextPlaylists.add(badges);
+            }
+            for (String badge : badges) {
                 b.add(Box.createHorizontalStrut(5));
                 b.add(new BadgeLabel(badge));
             }
@@ -707,8 +715,17 @@ public class MainGui {
 
     private ArrayList<String> getBadges(IPlaylistItem track) {
         ArrayList<String> badges = new ArrayList<>();
+
+        UsedTrack usedTrack = shuffleAlgorithm.getUsedTrackIfExists(track);
+        if (usedTrack != null) {
+            badges.add(usedTrack.from().getPlaylist().getName());
+        }
+
         for (PlaylistModel playlist : playlists) {
             if (!playlist.isChecked() || playlist.getTracks() == null) {
+                continue;
+            }
+            if (usedTrack != null && usedTrack.from().getPlaylist().getId().equals(playlist.getPlaylist().getId())) {
                 continue;
             }
             if (playlist.getTracks().stream().anyMatch(playlistTrack -> track.getId().equals(playlistTrack.getTrack().getId()))) {
