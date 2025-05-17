@@ -11,7 +11,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class SecondaryMonitorGui {
@@ -160,7 +159,9 @@ public class SecondaryMonitorGui {
                 titleLabel.setText(track.getName());
                 artistLabel.setText(Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")));
 
-                if (!Objects.equals(currentTrackId, track.getId())) {
+                if (currentTrackId == null) {
+                    currentTrackId = track.getId();
+                } else if (!currentTrackId.equals(track.getId())) {
                     startTimestamp = System.currentTimeMillis();
                     currentTrackId = track.getId();
                     duration = track.getDurationMs();
@@ -216,6 +217,9 @@ public class SecondaryMonitorGui {
         this.duration = durationMs;
     }
 
-
+    public void setSidePanelVisible(boolean visible) {
+        sidePanel.setPreferredSize(new Dimension(visible ? 500 : 0, 0));
+        sidePanel.revalidate();
+    }
 
 }

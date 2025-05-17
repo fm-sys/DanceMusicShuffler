@@ -14,6 +14,7 @@ public class PersistentPreferences {
     int count = 0;
     int cooldown = 0;
     String searchString = null;
+    boolean showSidePanel = true;
     List<PersistentPlaylistModel> playlists = null;
 
     public PersistentPreferences() {
@@ -25,6 +26,7 @@ public class PersistentPreferences {
         this.count = params.count;
         this.cooldown = params.cooldown;
         this.searchString = params.searchString;
+        this.showSidePanel = params.showSidePanel;
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -50,11 +52,13 @@ public class PersistentPreferences {
         public int count;
         public int cooldown;
         public String searchString;
+        public boolean showSidePanel;
 
-        public MainGuiParams(int count, int cooldown, String searchString) {
+        public MainGuiParams(int count, int cooldown, String searchString, boolean showSidePanel) {
             this.count = count;
             this.cooldown = cooldown;
             this.searchString = searchString;
+            this.showSidePanel = showSidePanel;
         }
     }
 
@@ -81,15 +85,15 @@ public class PersistentPreferences {
                     }
                 }
             }
-            return new MainGuiParams(preferences.count, preferences.cooldown, preferences.searchString);
+            return new MainGuiParams(preferences.count, preferences.cooldown, preferences.searchString, preferences.showSidePanel);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public static void store(List<PlaylistModel> playlists, int count, int cooldown, String searchString) {
-        PersistentPreferences preferences = new PersistentPreferences(playlists, new MainGuiParams(count, cooldown, searchString));
+    public static void store(List<PlaylistModel> playlists, int count, int cooldown, String searchString, boolean showSidePanel) {
+        PersistentPreferences preferences = new PersistentPreferences(playlists, new MainGuiParams(count, cooldown, searchString, showSidePanel));
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {

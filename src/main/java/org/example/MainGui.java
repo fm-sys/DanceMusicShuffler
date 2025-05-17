@@ -60,6 +60,7 @@ public class MainGui {
 
     JSpinner songNumberSpinner;
     JSpinner cooldownSpinner;
+    JCheckBox showSideSheetCheckbox;
     JButton loadAndShuffleButton;
 
     JPanel[] sidePanels = new JPanel[2];
@@ -201,7 +202,7 @@ public class MainGui {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), filterText);
+            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), filterText, showSideSheetCheckbox.isSelected());
         });
         labeledPanelConfig.add(storeButton);
 
@@ -212,6 +213,8 @@ public class MainGui {
                 songNumberSpinner.setValue(params.count);
                 cooldownSpinner.setValue(params.cooldown);
                 playlistsFilterTextField.setText(params.searchString);
+                showSideSheetCheckbox.setSelected(params.showSidePanel);
+                secondaryMonitorGui.setSidePanelVisible(params.showSidePanel);
                 recreatePlaylistsList();
             }
         });
@@ -226,6 +229,11 @@ public class MainGui {
         ));
         labeledPanelMonitor.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         centerPanel.add(labeledPanelMonitor);
+
+        showSideSheetCheckbox = new JCheckBox("Show side sheet");
+        showSideSheetCheckbox.setSelected(true);
+        showSideSheetCheckbox.addActionListener(e -> secondaryMonitorGui.setSidePanelVisible(showSideSheetCheckbox.isSelected()));
+        labeledPanelMonitor.add(showSideSheetCheckbox);
 
         JButton launchGuiButton = new JButton("Open secondary monitor GUI");
         launchGuiButton.addActionListener(e -> {
