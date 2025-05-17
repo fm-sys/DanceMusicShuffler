@@ -148,13 +148,11 @@ public class SecondaryMonitorGui {
         return true;
     }
 
-    public void update(BufferedImage coverImage, Track track, List<String> badges) {
+    public void update(BufferedImage coverImage, BufferedImage background, Track track, List<String> badges) {
         SwingUtilities.invokeLater(() -> {
             try {
-                BufferedImage roundedImage = ImageUtils.makeRoundedCorner(coverImage, 50);
-                cover.setIcon(new ImageIcon(roundedImage));
-
-                backgroundPanel.setBackgroundImage(ImageUtils.dimImage(ImageUtils.blurWithEdgeExtension(coverImage, 150), 0.5f));
+                cover.setIcon(new ImageIcon(coverImage));
+                backgroundPanel.setBackgroundImage(background);
 
                 titleLabel.setText(track.getName());
                 artistLabel.setText(Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")));

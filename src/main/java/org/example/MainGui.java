@@ -6,6 +6,7 @@ import org.example.api.Api;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
 import org.example.models.UsedTrack;
+import org.example.util.ImageUtils;
 import org.example.util.PopupMenuOpenedListener;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
@@ -37,7 +38,7 @@ import java.util.stream.Stream;
 
 public class MainGui {
 
-    public static final int SPOTIFY_WEB_API_DELAY = 250;
+    public static final int SPOTIFY_WEB_API_DELAY = 500;
 
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
 
@@ -680,8 +681,12 @@ public class MainGui {
                         Arrays.stream(track.getAlbum().getImages()).findFirst().ifPresent(image -> EventQueue.invokeLater(() -> {
                             try {
                                 URI url = new URI(image.getUrl());
-                                BufferedImage image1 = ImageIO.read(url.toURL());
-                                secondaryMonitorGui.update(image1, track, badges);
+                                BufferedImage rawImage = ImageIO.read(url.toURL());
+
+                                BufferedImage coverImage = ImageUtils.makeRoundedCorner(rawImage, 50);
+                                BufferedImage backgroundImage = ImageUtils.dimImage(ImageUtils.blurWithEdgeExtension(rawImage, 150), 0.5f);
+
+                                secondaryMonitorGui.update(coverImage, backgroundImage, track, badges);
                             } catch (Exception exp) {
                                 exp.printStackTrace();
                             }
