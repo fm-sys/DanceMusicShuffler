@@ -94,8 +94,11 @@ public class SecondaryMonitorGui {
 
 
         progressBar = new AnimatedWavyProgressBar();
-        frame.getContentPane().add(progressBar, BorderLayout.PAGE_END);
-
+        var progressBarContainer = new JPanel(new BorderLayout());
+        progressBarContainer.setOpaque(false);
+        progressBarContainer.setBorder(BorderFactory.createEmptyBorder(0, 0, 35, 0));
+        progressBarContainer.add(progressBar, BorderLayout.CENTER);
+        frame.getContentPane().add(progressBarContainer, BorderLayout.PAGE_END);
         launchSecondaryMonitorGui(false);
     }
 

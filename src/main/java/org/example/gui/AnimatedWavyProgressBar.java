@@ -8,13 +8,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AnimatedWavyProgressBar extends JComponent {
     private static final int SCALE = 5;
+    private static final int THUMB_HEIGHT = SCALE * 6;
 
     private float progress = 0.0f; // Current progress (0.0 to 1.0)
     private float waveOffset = 0;
     private boolean paused = false;
 
     public AnimatedWavyProgressBar() {
-        setPreferredSize(new Dimension(500, 80));
+        setPreferredSize(new Dimension(500, THUMB_HEIGHT));
 
         Timer timer = new Timer(16, e -> {
             waveOffset += 0.01f; // Slow wave movement
@@ -70,14 +71,13 @@ public class AnimatedWavyProgressBar extends JComponent {
 
         // Draw vertical capsule-shaped thumb
         int thumbX = (int) progressX;
-        int thumbHeight = 30;
-        int thumbWidth = 8;
-        int thumbY = centerY - thumbHeight / 2;
+        float thumbWidth = SCALE * 1.5f;
+        int thumbY = centerY - THUMB_HEIGHT / 2;
 
         g2.setColor(Color.WHITE);
         g2.fill(new RoundRectangle2D.Float(
                 thumbX - thumbWidth / 2f, thumbY,
-                thumbWidth, thumbHeight,
+                thumbWidth, THUMB_HEIGHT,
                 thumbWidth, thumbWidth
         ));
 
