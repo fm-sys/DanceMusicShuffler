@@ -67,6 +67,9 @@ public class MainGui {
     JButton loadAndShuffleButton;
 
     JPanel[] sidePanels = new JPanel[2];
+    JPanel leftHelperPanel = new JPanel();
+    JButton drawerButton = new JButton("\u2630");  // ☰
+    Drawer drawer;
 
     public MainGui(Collection<PlaylistSimplified> lists) {
 
@@ -117,10 +120,29 @@ public class MainGui {
         frame.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
+
+                int width = frame.getWidth() < 1000 ? (frame.getWidth() - 450) : ((frame.getWidth() - 400) / 2);
+
                 for (JPanel panel : sidePanels) {
-                    panel.setPreferredSize(new Dimension((frame.getWidth() - 400) / 2, 0));
+                    panel.setPreferredSize(new Dimension(width, 0));
                     panel.revalidate();
                 }
+
+                    leftHelperPanel.removeAll();
+
+
+                    if (frame.getWidth() < 1000) {
+                        // Small screen: show toggle button
+                        leftHelperPanel.add(drawerButton, BorderLayout.CENTER);
+                        drawer.setContent(sidePanels[0]);
+                        drawer.build();
+                    } else {
+                        drawer.setContent(null);
+                        leftHelperPanel.add(sidePanels[0], BorderLayout.CENTER);
+                    }
+
+                    leftHelperPanel.revalidate();
+                    leftHelperPanel.repaint();
             }
         });
 
@@ -480,8 +502,13 @@ public class MainGui {
         outerPanel.add(scrollPane);
 
         sidePanels[0] = outerPanel;
-        frame.add(outerPanel, BorderLayout.LINE_START);
+        frame.add(leftHelperPanel, BorderLayout.LINE_START);
+        leftHelperPanel.setLayout(new BorderLayout());
+        leftHelperPanel.add(outerPanel, BorderLayout.CENTER);
 
+        drawer = new Drawer(frame);
+        drawerButton.addActionListener(e -> drawer.toggle());
+        drawerButton.setFocusable(false);
     }
 
     private void recreatePlaylistsList() {
