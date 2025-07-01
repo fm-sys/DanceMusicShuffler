@@ -172,6 +172,7 @@ public class SecondaryMonitorGui {
 
                 for (String badge : badges) {
                     BadgeLabel badgeLabel = new BadgeLabel(badge);
+                    badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
                     badgeLabel.setFont(badgeLabel.getFont().deriveFont(36.0f));
                     badgesPanel.add(badgeLabel);
                 }
@@ -202,6 +203,7 @@ public class SecondaryMonitorGui {
             b.add(Box.createHorizontalGlue());
 
             BadgeLabel badgeLabel = new BadgeLabel(badge.getFirst());
+            badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
             badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
             b.add(badgeLabel);
 
