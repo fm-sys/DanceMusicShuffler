@@ -35,7 +35,26 @@ public class OAuthRedirectServer {
                 String code = null;
                 if (query != null && query.contains("code=") && query.contains("state=" + state)) {
                     code = query.split("code=")[1].split("&")[0]; // Extract code parameter
-                    response = "Authorization successful! You can now close the browser window.";//"<!DOCTYPE html><html><body>Authorization successful! You can now close the browser window.<script>window.close();</script></body></html>";
+                    response = "<!DOCTYPE html>\n" +
+                            "<html>\n" +
+                            "<body>\n" +
+                            "  <div id=\"message\">Authorization successful! You can now close the browser window.</div>\n" +
+                            "  <script>\n" +
+                            "    const msg = document.getElementById(\"message\");\n" +
+                            "    let count = 5;\n" +
+                            "    msg.textContent = `Authorization successful! Closing in ${count}...`;" +
+                            "    const interval = setInterval(() => {\n" +
+                            "      if (count > 0) {\n" +
+                            "        count--;\n" +
+                            "        msg.textContent = `Authorization successful! Closing in ${count}...`;\n" +
+                            "      } else {\n" +
+                            "        clearInterval(interval);\n" +
+                            "        window.close();\n" +
+                            "      }\n" +
+                            "    }, 1000);\n" +
+                            "  </script>\n" +
+                            "</body>\n" +
+                            "</html>\n";
                 } else {
                     response = "Authorization failed or canceled.";
                 }
