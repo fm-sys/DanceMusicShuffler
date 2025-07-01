@@ -47,6 +47,7 @@ public class MainGui {
     ShuffleAlgorithm shuffleAlgorithm;
 
     String activeDeviceId = null;
+    boolean comboboxListenersEnabled = true;
 
     JFrame frame;
 
@@ -587,21 +588,25 @@ public class MainGui {
         });
 
         devicesComboBox.addActionListener(e -> {
+            if (!comboboxListenersEnabled) {
+                return; // Prevents triggering action listeners while updating
+            }
+
             DeviceDisplayable selected = (DeviceDisplayable) devicesComboBox.getSelectedItem();
             if (selected != null) {
                 System.out.println("Selected device: " + selected.device().getName());
                 activeDeviceId = selected.device().getId();
-                    JsonArray array = new JsonArray();
-                    array.add(selected.device().getId());
-                    Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
-                            (res, ex) -> {
-                                if (ex != null) {
-                                    System.err.println("Caught Exception: " + ex.getMessage());
-                                } else {
-                                    System.out.println("Transferred playback to device: " + selected.device().getName());
-                                }
+                JsonArray array = new JsonArray();
+                array.add(selected.device().getId());
+                Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
+                        (res, ex) -> {
+                            if (ex != null) {
+                                System.err.println("Caught Exception: " + ex.getMessage());
+                            } else {
+                                System.out.println("Transferred playback to device: " + selected.device().getName());
                             }
-                    );
+                        }
+                );
             }
         });
 
@@ -621,29 +626,26 @@ public class MainGui {
         return buttonPanel;
     }
 
-    private static void updateDevicesComboBox(JComboBox<DeviceDisplayable> devicesComboBox) {
-        java.util.List<DeviceDisplayable> devices = fetchDevices();
+    private void updateDevicesComboBox(JComboBox<DeviceDisplayable> devicesComboBox) {
+        java.util.List<DeviceDisplayable> devices = new ArrayList<>(fetchDevices());
 
-        if (devices != null && devices.size() == devicesComboBox.getItemCount()) {
-            boolean noChange = true;
-            for (int i = 0; i < devicesComboBox.getItemCount(); i++) {
-                DeviceDisplayable device = devicesComboBox.getItemAt(i);
-                if (devices.stream().noneMatch(d -> d.device().getId().equals(device.device().getId()))) {
-                    noChange = false;
-                }
-            }
-            if (noChange) return; // No change in devices, no need to update
-        }
-
+        comboboxListenersEnabled = false; // Prevents triggering action listeners while updating
         devicesComboBox.removeAllItems();
-        if (devices != null) {
-            for (DeviceDisplayable device : devices) {
-                devicesComboBox.addItem(device);
-                if (device.device().getIs_active()) {
-                    devicesComboBox.setSelectedItem(device);
-                }
+        devices.sort((d1, d2) -> { // "Computers" first, then other devices
+            if (d1.device().getType().equals("Computer") && !d2.device().getType().equals("Computer")) {
+                return -1;
+            } else if (!d1.device().getType().equals("Computer") && d2.device().getType().equals("Computer")) {
+                return 1;
+            }
+            return 0;
+        });
+        for (DeviceDisplayable device : devices) {
+            devicesComboBox.addItem(device);
+            if (device.device().getIs_active()) {
+                devicesComboBox.setSelectedItem(device);
             }
         }
+        comboboxListenersEnabled = true; // Re-enable listeners
     }
 
     private static java.util.List<DeviceDisplayable> fetchDevices() {
@@ -652,7 +654,7 @@ public class MainGui {
             return Stream.of(devices).map(DeviceDisplayable::new).toList();
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             e.printStackTrace();
-            return null;
+            return new ArrayList<>();
         }
     }
 
