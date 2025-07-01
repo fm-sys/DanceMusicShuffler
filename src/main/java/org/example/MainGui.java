@@ -591,7 +591,6 @@ public class MainGui {
             if (selected != null) {
                 System.out.println("Selected device: " + selected.device().getName());
                 activeDeviceId = selected.device().getId();
-                if (!selected.device().getIs_active()) {
                     JsonArray array = new JsonArray();
                     array.add(selected.device().getId());
                     Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
@@ -603,22 +602,46 @@ public class MainGui {
                                 }
                             }
                     );
-                }
             }
         });
 
         updateDevicesComboBox(devicesComboBox);
+
+        for (int i = 0; i < devicesComboBox.getItemCount(); i++) {
+            DeviceDisplayable device = devicesComboBox.getItemAt(i);
+            if (device.device().getType().equals("Computer")) {
+                devicesComboBox.setSelectedItem(device);
+                if (device.device().getIs_active()) {
+                    break;
+                }
+            }
+        }
 
         buttonPanel.add(devicesComboBox);
         return buttonPanel;
     }
 
     private static void updateDevicesComboBox(JComboBox<DeviceDisplayable> devicesComboBox) {
-        java.util.List<DeviceDisplayable> people = fetchDevices();
+        java.util.List<DeviceDisplayable> devices = fetchDevices();
+
+        if (devices != null && devices.size() == devicesComboBox.getItemCount()) {
+            boolean noChange = true;
+            for (int i = 0; i < devicesComboBox.getItemCount(); i++) {
+                DeviceDisplayable device = devicesComboBox.getItemAt(i);
+                if (devices.stream().noneMatch(d -> d.device().getId().equals(device.device().getId()))) {
+                    noChange = false;
+                }
+            }
+            if (noChange) return; // No change in devices, no need to update
+        }
+
         devicesComboBox.removeAllItems();
-        if (people != null) {
-            for (DeviceDisplayable person : people) {
-                devicesComboBox.addItem(person);
+        if (devices != null) {
+            for (DeviceDisplayable device : devices) {
+                devicesComboBox.addItem(device);
+                if (device.device().getIs_active()) {
+                    devicesComboBox.setSelectedItem(device);
+                }
             }
         }
     }
