@@ -1,7 +1,6 @@
 package org.example;
 
 import org.example.gui.*;
-import org.example.util.ImageUtils;
 import org.example.util.PreventSleep;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
@@ -31,6 +30,8 @@ public class SecondaryMonitorGui {
     private long duration = 0;
     private boolean paused = false;
 
+    private BufferedImage backgroundImage;
+    private boolean coloredBackground = true;
 
     public SecondaryMonitorGui() {
 
@@ -69,7 +70,7 @@ public class SecondaryMonitorGui {
 
         artistLabel = new JLabel("Artist");
         artistLabel.setFont(artistLabel.getFont().deriveFont(Font.ITALIC).deriveFont(24.0f));
-        artistLabel.setForeground(Color.LIGHT_GRAY);
+        artistLabel.setForeground(new Color(255, 255, 255, 192));
         coverPanel.add(AlignHelper.center(artistLabel));
 
         coverPanel.add(Box.createVerticalStrut(30));
@@ -155,7 +156,11 @@ public class SecondaryMonitorGui {
         SwingUtilities.invokeLater(() -> {
             try {
                 cover.setIcon(new ImageIcon(coverImage));
-                backgroundPanel.setBackgroundImage(background);
+
+                backgroundImage = background;
+                if (coloredBackground) {
+                    backgroundPanel.setBackgroundImage(backgroundImage);
+                }
 
                 titleLabel.setText(track.getName());
                 artistLabel.setText(Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")));
@@ -238,4 +243,12 @@ public class SecondaryMonitorGui {
         sidePanel.revalidate();
     }
 
+    public void setColoredBackground(boolean selected) {
+        this.coloredBackground = selected;
+        if (coloredBackground) {
+            backgroundPanel.setBackgroundImage(backgroundImage);
+        } else {
+            backgroundPanel.setBackgroundImage(null);
+        }
+    }
 }
