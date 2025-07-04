@@ -13,6 +13,7 @@ import org.example.worker.PlaylistLoader;
 import org.example.api.SpotifyWindowTitle;
 import org.example.models.PlaylistModel;
 import org.example.worker.ShuffleAlgorithm;
+import org.example.worker.SpotifyOcrProcessor;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
@@ -41,6 +42,9 @@ public class MainGui {
     public static final int SPOTIFY_WEB_API_DELAY = 500;
 
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
+
+    final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
+    final SpotifyOcrProcessor spotifyOcrProcessor = new SpotifyOcrProcessor(ocrOverlayWindow);
 
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
@@ -318,6 +322,27 @@ public class MainGui {
         centerPanel.add(expandedButtonPanel);
 
         centerPanel.add(Box.createVerticalGlue());
+
+        centerPanel.add(Box.createVerticalStrut(10));
+
+        JPanel labeledPanelExperimental = new JPanel(new GridLayout(0, 1));
+        labeledPanelExperimental.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Experimental Features"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        labeledPanelExperimental.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
+        centerPanel.add(labeledPanelExperimental);
+
+        JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable OCR Overlay");
+        ocrOverlayCheckbox.setSelected(false);
+        ocrOverlayCheckbox.addActionListener(e -> {
+            if (ocrOverlayCheckbox.isSelected()) {
+                spotifyOcrProcessor.start();
+            } else {
+                spotifyOcrProcessor.stop();
+            }
+        });
+        labeledPanelExperimental.add(ocrOverlayCheckbox);
 
     }
 
