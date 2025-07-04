@@ -1,7 +1,7 @@
 package org.example;
 
 import org.example.gui.*;
-import org.example.util.PreventSleep;
+import org.example.worker.PreventSleep;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
