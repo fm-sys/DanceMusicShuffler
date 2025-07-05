@@ -5,6 +5,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
+import org.example.models.TrackWithBadges;
 import org.example.models.UsedTrack;
 import org.example.util.ImageUtils;
 import org.example.util.PopupMenuOpenedListener;
@@ -455,6 +456,7 @@ public class MainGui {
 
         int lineHeight = calculateBadgeHeight();
         java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
+        java.util.List<TrackWithBadges> queueTracks = new ArrayList<>();
 
         queue.forEach(item -> {
             Box b = Box.createHorizontalBox();
@@ -468,6 +470,7 @@ public class MainGui {
             if (!badges.isEmpty()) {
                 nextPlaylists.add(badges);
             }
+            queueTracks.add(new TrackWithBadges(item, badges));
             for (String badge : badges) {
                 b.add(Box.createHorizontalStrut(5));
                 b.add(new BadgeLabel(badge));
@@ -479,6 +482,7 @@ public class MainGui {
         queueListPanel.repaint();    // Redraws panel
 
         secondaryMonitorGui.updateSidePanel(nextPlaylists.stream().limit(5).toList());
+        ocrOverlayWindow.updateQueue(queueTracks);
     }
 
     private void createPlaylistList() {

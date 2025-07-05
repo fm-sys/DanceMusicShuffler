@@ -23,6 +23,7 @@ dependencies {
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
 
     implementation 'net.sourceforge.tess4j:tess4j:5.16.0'
+    implementation 'org.apache.commons:commons-text:1.10.0'
 
     implementation 'ch.qos.logback:logback-classic:1.4.14'
 
