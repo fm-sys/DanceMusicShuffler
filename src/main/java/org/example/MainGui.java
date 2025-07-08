@@ -323,28 +323,6 @@ public class MainGui {
         centerPanel.add(expandedButtonPanel);
 
         centerPanel.add(Box.createVerticalGlue());
-
-        centerPanel.add(Box.createVerticalStrut(10));
-
-        JPanel labeledPanelExperimental = new JPanel(new GridLayout(0, 1));
-        labeledPanelExperimental.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Experimental Features"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
-        labeledPanelExperimental.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
-        centerPanel.add(labeledPanelExperimental);
-
-        JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable OCR Overlay");
-        ocrOverlayCheckbox.setSelected(false);
-        ocrOverlayCheckbox.addActionListener(e -> {
-            if (ocrOverlayCheckbox.isSelected()) {
-                spotifyOcrProcessor.start();
-            } else {
-                spotifyOcrProcessor.stop();
-            }
-        });
-        labeledPanelExperimental.add(ocrOverlayCheckbox);
-
     }
 
     private void restoreLoadAndShuffleButton() {
@@ -431,6 +409,17 @@ public class MainGui {
         JLabel queueLabel = new JLabel("Queue");
         queueLabel.setFont(queueLabel.getFont().deriveFont(Font.BOLD));
         outerPanel.add(AlignHelper.center(queueLabel));
+
+        JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify In-App Overlay (experimental)");
+        ocrOverlayCheckbox.setSelected(false);
+        ocrOverlayCheckbox.addActionListener(e -> {
+            if (ocrOverlayCheckbox.isSelected()) {
+                spotifyOcrProcessor.start();
+            } else {
+                spotifyOcrProcessor.stop();
+            }
+        });
+        outerPanel.add(AlignHelper.center(ocrOverlayCheckbox));
 
         queueListPanel = new JPanel();
         queueListPanel.setLayout(new BoxLayout(queueListPanel, BoxLayout.Y_AXIS));
