@@ -5,6 +5,7 @@ import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
+import org.example.models.TrackWithBadges;
 import org.example.models.UsedTrack;
 import org.example.util.ImageUtils;
 import org.example.util.PopupMenuOpenedListener;
@@ -13,6 +14,7 @@ import org.example.worker.PlaylistLoader;
 import org.example.api.SpotifyWindowTitle;
 import org.example.models.PlaylistModel;
 import org.example.worker.ShuffleAlgorithm;
+import org.example.worker.SpotifyOcrProcessor;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
@@ -41,6 +43,9 @@ public class MainGui {
     public static final int SPOTIFY_WEB_API_DELAY = 500;
 
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
+
+    final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
+    final SpotifyOcrProcessor spotifyOcrProcessor = new SpotifyOcrProcessor(ocrOverlayWindow);
 
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
@@ -318,7 +323,6 @@ public class MainGui {
         centerPanel.add(expandedButtonPanel);
 
         centerPanel.add(Box.createVerticalGlue());
-
     }
 
     private void restoreLoadAndShuffleButton() {
@@ -406,6 +410,17 @@ public class MainGui {
         queueLabel.setFont(queueLabel.getFont().deriveFont(Font.BOLD));
         outerPanel.add(AlignHelper.center(queueLabel));
 
+        JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify In-App Overlay (experimental)");
+        ocrOverlayCheckbox.setSelected(false);
+        ocrOverlayCheckbox.addActionListener(e -> {
+            if (ocrOverlayCheckbox.isSelected()) {
+                spotifyOcrProcessor.start();
+            } else {
+                spotifyOcrProcessor.stop();
+            }
+        });
+        outerPanel.add(AlignHelper.center(ocrOverlayCheckbox));
+
         queueListPanel = new JPanel();
         queueListPanel.setLayout(new BoxLayout(queueListPanel, BoxLayout.Y_AXIS));
 
@@ -430,6 +445,7 @@ public class MainGui {
 
         int lineHeight = calculateBadgeHeight();
         java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
+        java.util.List<TrackWithBadges> queueTracks = new ArrayList<>();
 
         queue.forEach(item -> {
             Box b = Box.createHorizontalBox();
@@ -443,6 +459,7 @@ public class MainGui {
             if (!badges.isEmpty()) {
                 nextPlaylists.add(badges);
             }
+            queueTracks.add(new TrackWithBadges(item, badges));
             for (String badge : badges) {
                 b.add(Box.createHorizontalStrut(5));
                 b.add(new BadgeLabel(badge));
@@ -454,6 +471,7 @@ public class MainGui {
         queueListPanel.repaint();    // Redraws panel
 
         secondaryMonitorGui.updateSidePanel(nextPlaylists.stream().limit(5).toList());
+        ocrOverlayWindow.updateQueue(queueTracks);
     }
 
     private void createPlaylistList() {

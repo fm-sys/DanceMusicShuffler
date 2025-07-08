@@ -64,5 +64,14 @@ public class SpotifyWindowTitle {
     public static boolean initialized() {
         return spotifyWindow != null;
     }
+
+    public static HWND getSpotifyHWND() {
+        return spotifyWindow;
+    }
+
+    public static boolean isSpotifyInForeground() {
+        HWND foregroundWindow = User32.INSTANCE.GetForegroundWindow();
+        return foregroundWindow != null && foregroundWindow.equals(spotifyWindow);
+    }
 }
 

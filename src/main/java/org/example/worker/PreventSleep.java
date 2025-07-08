@@ -1,4 +1,4 @@
-package org.example.util;
+package org.example.worker;
 
 import java.awt.*;
 import java.time.Duration;
