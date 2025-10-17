@@ -754,7 +754,7 @@ public class MainGui {
                     }
 
                     if (track.getAlbum() != null && track.getAlbum().getImages() != null) {
-                        Arrays.stream(track.getAlbum().getImages()).findFirst().ifPresent(image -> EventQueue.invokeLater(() -> {
+                        Arrays.stream(track.getAlbum().getImages()).findFirst().ifPresent(image -> new Thread(() -> {
                             try {
                                 URI url = new URI(image.getUrl());
                                 BufferedImage rawImage = ImageIO.read(url.toURL());
@@ -766,8 +766,7 @@ public class MainGui {
                             } catch (Exception exp) {
                                 exp.printStackTrace();
                             }
-
-                        }));
+                        }).start());
                     }
                 }
 
