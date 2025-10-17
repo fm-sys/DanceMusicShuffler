@@ -456,9 +456,7 @@ public class MainGui {
             }
             b.add(label);
             ArrayList<String> badges = getBadges(item);
-            if (!badges.isEmpty()) {
-                nextPlaylists.add(badges);
-            }
+            nextPlaylists.add(badges);
             queueTracks.add(new TrackWithBadges(item, badges));
             for (String badge : badges) {
                 b.add(Box.createHorizontalStrut(5));

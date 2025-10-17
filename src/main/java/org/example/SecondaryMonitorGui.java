@@ -207,7 +207,7 @@ public class SecondaryMonitorGui {
             Box b = Box.createHorizontalBox();
             b.add(Box.createHorizontalGlue());
 
-            BadgeLabel badgeLabel = new BadgeLabel(badge.getFirst());
+            BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
             badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
             badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
             b.add(badgeLabel);
