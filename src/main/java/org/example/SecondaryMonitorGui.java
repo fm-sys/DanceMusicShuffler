@@ -7,6 +7,7 @@ import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
@@ -43,6 +44,16 @@ public class SecondaryMonitorGui {
         backgroundPanel = new BackgroundPanel();
         backgroundPanel.setLayout(new BorderLayout());
         frame.setContentPane(backgroundPanel);
+
+        JRootPane rootPane = frame.getRootPane();
+        InputMap inputMap = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        inputMap.put(KeyStroke.getKeyStroke("ESCAPE"), "closeWindow");
+        rootPane.getActionMap().put("closeWindow", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                frame.dispose();
+            }
+        });
 
         var icon = getClass().getResource("/icon48.png");
         if (icon != null) {
