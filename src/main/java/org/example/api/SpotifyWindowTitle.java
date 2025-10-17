@@ -61,6 +61,13 @@ public class SpotifyWindowTitle {
         return true;
     }
 
+    public static boolean pausedBasedOnLastTitle() {
+        if (lastWindowTitle == null) {
+            return false;
+        }
+        return lastWindowTitle.equals("Spotify Premium");
+    }
+
     public static boolean initialized() {
         return spotifyWindow != null;
     }

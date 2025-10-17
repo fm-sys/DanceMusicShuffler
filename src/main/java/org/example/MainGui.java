@@ -103,6 +103,7 @@ public class MainGui {
 
         new Timer(1000, evt -> {
             if (SpotifyWindowTitle.titleChanged()) {
+                secondaryMonitorGui.setPaused(SpotifyWindowTitle.pausedBasedOnLastTitle());
                 Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e -> updateNowPlaying());
                 timer.setRepeats(false);
                 timer.start();
