@@ -2,6 +2,7 @@ package org.example.worker;
 
 import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
+import org.example.models.PlaylistGroup;
 import org.example.models.PlaylistModel;
 import org.example.models.UsedTrack;
 import org.example.util.FixedSizeQueue;
@@ -16,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class ShuffleAlgorithm {
     ArrayList<PlaylistModel> playlists;
+    ArrayList<PlaylistGroup> playlistGroups;
 
     final FixedSizeQueue<PlaylistModel> recentlyUsedPlaylists = new FixedSizeQueue<>(0);
     final ArrayList<UsedTrack> alreadyUsedTracks = new ArrayList<>();
@@ -40,16 +42,25 @@ public class ShuffleAlgorithm {
         return getUsedTrackIfExists(track) == null;
     }
 
-    private ArrayList<PlaylistModel> getAllowedPlaylists() {
+    private ArrayList<PlaylistModel> getAllowedPlaylists(boolean groupPlaylists) {
         ArrayList<PlaylistModel> allowedPlaylists = new ArrayList<>();
 
         for (PlaylistModel playlist : playlists) {
-            if (playlist.isChecked() && (!wasExclusive || !playlist.isExclusive()) && !recentlyUsedPlaylists.contains(playlist)) {
+            if (playlist.isChecked() && (!wasExclusive || !playlist.isExclusive()) && !isRecentlyUsed(groupPlaylists, playlist)) {
                 allowedPlaylists.add(playlist);
             }
         }
 
         return allowedPlaylists;
+    }
+
+    private boolean isRecentlyUsed(boolean groupPlaylists, PlaylistModel playlist) {
+        if (!groupPlaylists) {
+            return recentlyUsedPlaylists.contains(playlist);
+        }
+
+        return playlistGroups.stream().filter(group -> group.contains(playlist)) //takes all the groups which the playlist is part of
+                .anyMatch(group -> (recentlyUsedPlaylists.stream().anyMatch(group::contains))); //checks if any of those groups contain any of the recently used playlists
     }
 
     private PlaylistModel getWeightedRandom(List<PlaylistModel> items) {
@@ -71,19 +82,24 @@ public class ShuffleAlgorithm {
         throw new RuntimeException("We failed at random"); // Sollte nie passieren
     }
 
-    public CompletableFuture<Boolean> shuffleAsync(int count, int cooldown, String deviceId) {
-        return SpotifyApiThreading.executeAsync(() -> shuffle(count, cooldown, deviceId));
+    public CompletableFuture<Boolean> shuffleAsync(int count, int cooldown, boolean groupPlaylists, String deviceId) {
+        return SpotifyApiThreading.executeAsync(() -> shuffle(count, cooldown, groupPlaylists, deviceId));
     }
 
-    public boolean shuffle(int count, int cooldown, String deviceId) {
+    public boolean shuffle(int count, int cooldown, boolean groupPlaylists, String deviceId) {
         recentlyUsedPlaylists.setMaxSize(cooldown);
+
+        if (groupPlaylists) {
+            // rebuild groups (only selected playlists)
+            playlistGroups = PlaylistGroup.createGroups(playlists.stream().filter(PlaylistModel::isChecked).toList());
+        }
 
         if (count <= 0) {
             System.out.println("Shuffle finished");
             return true;
         }
 
-        PlaylistModel chosenPlaylist = getWeightedRandom(getAllowedPlaylists());
+        PlaylistModel chosenPlaylist = getWeightedRandom(getAllowedPlaylists(groupPlaylists));
         if (chosenPlaylist == null) {
             System.out.println("No allowed playlists available");
             return false;
@@ -104,7 +120,7 @@ public class ShuffleAlgorithm {
         try {
             Api.INSTANCE.addItemToUsersPlaybackQueue(chosenTrack.getUri()).device_id(deviceId).build().execute();
             System.out.println("Added track to queue: " + chosenTrack.getName());
-            return shuffle(count - 1, cooldown, deviceId);
+            return shuffle(count - 1, cooldown, groupPlaylists, deviceId);
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             e.printStackTrace();
             return false;

@@ -68,6 +68,7 @@ public class MainGui {
 
     JSpinner songNumberSpinner;
     JSpinner cooldownSpinner;
+    JCheckBox groupPlaylistsCheckbox;
     JCheckBox secondaryGuiShowSideSheetCheckbox;
     JCheckBox secondaryGuiColoredBackgroundCheckbox;
     JButton loadAndShuffleButton;
@@ -89,7 +90,7 @@ public class MainGui {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 UnsupportedLookAndFeelException e) {
+                UnsupportedLookAndFeelException e) {
             throw new RuntimeException(e);
         }
 
@@ -135,21 +136,21 @@ public class MainGui {
                     panel.revalidate();
                 }
 
-                    leftHelperPanel.removeAll();
+                leftHelperPanel.removeAll();
 
 
-                    if (frame.getWidth() < 1000) {
-                        // Small screen: show toggle button
-                        leftHelperPanel.add(drawerButton, BorderLayout.CENTER);
-                        drawer.setContent(sidePanels[0]);
-                        drawer.build();
-                    } else {
-                        drawer.setContent(null);
-                        leftHelperPanel.add(sidePanels[0], BorderLayout.CENTER);
-                    }
+                if (frame.getWidth() < 1000) {
+                    // Small screen: show toggle button
+                    leftHelperPanel.add(drawerButton, BorderLayout.CENTER);
+                    drawer.setContent(sidePanels[0]);
+                    drawer.build();
+                } else {
+                    drawer.setContent(null);
+                    leftHelperPanel.add(sidePanels[0], BorderLayout.CENTER);
+                }
 
-                    leftHelperPanel.revalidate();
-                    leftHelperPanel.repaint();
+                leftHelperPanel.revalidate();
+                leftHelperPanel.repaint();
             }
         });
 
@@ -200,6 +201,11 @@ public class MainGui {
         cooldownSpinner.setMaximumSize(new Dimension(cooldownSpinner.getPreferredSize().width, cooldownSpinner.getPreferredSize().height));
         labeledPanelOptions.add(AlignHelper.left(cooldownSpinner));
 
+        groupPlaylistsCheckbox = new JCheckBox("Group playlists based on names");
+        groupPlaylistsCheckbox.setSelected(false);
+        labeledPanelOptions.add(groupPlaylistsCheckbox);
+        labeledPanelOptions.add(AlignHelper.left(groupPlaylistsCheckbox));
+
         labeledPanelOptions.add(Box.createVerticalStrut(10));
 
         JLabel exclusiveLabel = new JLabel("These playlists are not allowed to be played directly after each other:");
@@ -234,6 +240,7 @@ public class MainGui {
             if (params != null) {
                 songNumberSpinner.setValue(params.count);
                 cooldownSpinner.setValue(params.cooldown);
+                groupPlaylistsCheckbox.setSelected(params.groupPlaylists);
                 playlistsFilterTextField.setText(params.searchString);
                 secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel);
                 secondaryMonitorGui.setSidePanelVisible(params.showSidePanel);
@@ -250,7 +257,7 @@ public class MainGui {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), filterText, secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
+            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), filterText, secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
         });
         labeledPanelConfig.add(storeButton);
 
@@ -300,7 +307,7 @@ public class MainGui {
             PlaylistLoader.loadPlaylistsAsync(playlists)
                     .thenAccept(success -> {
                         if (success) {
-                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), activeDeviceId).thenAccept(result -> {
+                            shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), activeDeviceId).thenAccept(result -> {
                                 Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e1 -> restoreLoadAndShuffleButton());
                                 timer.setRepeats(false);
                                 timer.start();
