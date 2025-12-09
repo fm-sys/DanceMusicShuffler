@@ -73,4 +73,12 @@ public class PlaylistModel {
     public ArrayList<PlaylistTrack> getTracks() {
         return tracks;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof PlaylistModel) {
+            return ((PlaylistModel) obj).getPlaylist().getId().equals(playlist.getId());
+        }
+        return false;
+    }
 }
