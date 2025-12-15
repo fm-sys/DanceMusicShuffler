@@ -203,41 +203,43 @@ public class SecondaryMonitorGui {
     }
 
     public void updateSidePanel(List<List<String>> badges) {
-        sidePanel.removeAll();
+        SwingUtilities.invokeLater(() -> {
+            sidePanel.removeAll();
 
-        sidePanel.add(Box.createVerticalGlue());
+            sidePanel.add(Box.createVerticalGlue());
 
-        JLabel label = new JLabel("N\u00e4chste T\u00e4nze");
-        label.setFont(titleLabel.getFont().deriveFont(36.0f));
-        label.setForeground(Color.WHITE);
-        sidePanel.add(AlignHelper.center(label));
+            JLabel label = new JLabel("N\u00e4chste T\u00e4nze");
+            label.setFont(titleLabel.getFont().deriveFont(36.0f));
+            label.setForeground(Color.WHITE);
+            sidePanel.add(AlignHelper.center(label));
 
-        sidePanel.add(Box.createVerticalStrut(20));
+            sidePanel.add(Box.createVerticalStrut(20));
 
-        for (List<String> badge : badges) {
-            Box b = Box.createHorizontalBox();
-            b.add(Box.createHorizontalGlue());
+            for (List<String> badge : badges) {
+                Box b = Box.createHorizontalBox();
+                b.add(Box.createHorizontalGlue());
 
-            BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
-            badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
-            badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
-            b.add(badgeLabel);
+                BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
+                badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
+                badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
+                b.add(badgeLabel);
 
-            if (badge.size() > 1) {
-                JLabel moreLabel = new JLabel(" + " + (badge.size() - 1));
-                moreLabel.setForeground(Color.WHITE);
-                moreLabel.setFont(moreLabel.getFont().deriveFont(24.0f));
-                b.add(moreLabel);
+                if (badge.size() > 1) {
+                    JLabel moreLabel = new JLabel(" + " + (badge.size() - 1));
+                    moreLabel.setForeground(Color.WHITE);
+                    moreLabel.setFont(moreLabel.getFont().deriveFont(24.0f));
+                    b.add(moreLabel);
+                }
+
+                b.add(Box.createHorizontalGlue());
+                sidePanel.add(b);
             }
 
-            b.add(Box.createHorizontalGlue());
-            sidePanel.add(b);
-        }
+            sidePanel.add(Box.createVerticalGlue());
 
-        sidePanel.add(Box.createVerticalGlue());
-
-        sidePanel.revalidate();
-        sidePanel.repaint();
+            sidePanel.revalidate();
+            sidePanel.repaint();
+        });
     }
 
     public void setPaused(boolean paused) {

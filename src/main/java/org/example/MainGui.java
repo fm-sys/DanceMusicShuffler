@@ -452,7 +452,6 @@ public class MainGui {
         queueListPanel.removeAll();
 
         int lineHeight = calculateBadgeHeight();
-        java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
         java.util.List<TrackWithBadges> queueTracks = new ArrayList<>();
 
         queue.forEach(item -> {
@@ -464,7 +463,6 @@ public class MainGui {
             }
             b.add(label);
             ArrayList<String> badges = getBadges(item);
-            nextPlaylists.add(badges);
             queueTracks.add(new TrackWithBadges(item, badges));
             for (String badge : badges) {
                 b.add(Box.createHorizontalStrut(5));
@@ -476,7 +474,6 @@ public class MainGui {
         queueListPanel.revalidate(); // Updates layout
         queueListPanel.repaint();    // Redraws panel
 
-        secondaryMonitorGui.updateSidePanel(nextPlaylists.stream().limit(5).toList());
         ocrOverlayWindow.updateQueue(queueTracks);
     }
 
@@ -771,6 +768,10 @@ public class MainGui {
                                 BufferedImage backgroundImage = ImageUtils.dimImage(ImageUtils.blurWithEdgeExtension(rawImage, 150), 0.5f);
 
                                 secondaryMonitorGui.update(coverImage, backgroundImage, track, badges);
+
+                                java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
+                                response.getQueue().forEach(item -> nextPlaylists.add(getBadges(item)));
+                                secondaryMonitorGui.updateSidePanel(nextPlaylists.stream().limit(5).toList());
                             } catch (Exception exp) {
                                 exp.printStackTrace();
                             }
