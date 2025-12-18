@@ -256,6 +256,11 @@ public class SecondaryMonitorGui {
         sidePanel.revalidate();
     }
 
+    public void setCoverVisible(boolean visible) {
+        cover.setVisible(visible);
+        cover.revalidate();
+    }
+
     public void setColoredBackground(boolean selected) {
         this.coloredBackground = selected;
         if (coloredBackground) {

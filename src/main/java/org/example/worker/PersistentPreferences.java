@@ -16,6 +16,7 @@ public class PersistentPreferences {
     boolean groupPlaylists = false;
     String searchString = null;
     boolean showSidePanel = true;
+    boolean showCover = true;
     boolean colorBackground = true;
     List<PersistentPlaylistModel> playlists = null;
 
@@ -30,6 +31,7 @@ public class PersistentPreferences {
         this.groupPlaylists = params.groupPlaylists;
         this.searchString = params.searchString;
         this.showSidePanel = params.showSidePanel;
+        this.showCover = params.showCover;
         this.colorBackground = params.colorBackground;
     }
 
@@ -58,14 +60,16 @@ public class PersistentPreferences {
         public boolean groupPlaylists;
         public String searchString;
         public boolean showSidePanel;
+        public boolean showCover;
         public boolean colorBackground;
 
-        public MainGuiParams(int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean colorBackground) {
+        public MainGuiParams(int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean showCover, boolean colorBackground) {
             this.count = count;
             this.cooldown = cooldown;
             this.groupPlaylists = groupPlaylists;
             this.searchString = searchString;
             this.showSidePanel = showSidePanel;
+            this.showCover = showCover;
             this.colorBackground = colorBackground;
         }
     }
@@ -93,15 +97,15 @@ public class PersistentPreferences {
                     }
                 }
             }
-            return new MainGuiParams(preferences.count, preferences.cooldown, preferences.groupPlaylists, preferences.searchString, preferences.showSidePanel, preferences.colorBackground);
+            return new MainGuiParams(preferences.count, preferences.cooldown, preferences.groupPlaylists, preferences.searchString, preferences.showSidePanel, preferences.showCover, preferences.colorBackground);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    public static void store(List<PlaylistModel> playlists, int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean colorBackground) {
-        PersistentPreferences preferences = new PersistentPreferences(playlists, new MainGuiParams(count, cooldown, groupPlaylists, searchString, showSidePanel, colorBackground));
+    public static void store(List<PlaylistModel> playlists, int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean showCover, boolean colorBackground) {
+        PersistentPreferences preferences = new PersistentPreferences(playlists, new MainGuiParams(count, cooldown, groupPlaylists, searchString, showSidePanel, showCover, colorBackground));
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
