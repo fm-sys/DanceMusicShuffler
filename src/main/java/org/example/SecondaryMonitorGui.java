@@ -81,7 +81,7 @@ public class SecondaryMonitorGui {
 
         artistLabel = new JLabel("Artist");
         artistLabel.setFont(artistLabel.getFont().deriveFont(Font.ITALIC).deriveFont(24.0f));
-        artistLabel.setForeground(new Color(255, 255, 255, 192));
+        artistLabel.setForeground(new Color(255, 255, 255, 255));
         coverPanel.add(AlignHelper.center(artistLabel));
 
         coverPanel.add(Box.createVerticalStrut(30));
@@ -101,7 +101,7 @@ public class SecondaryMonitorGui {
         sidePanel.setOpaque(false);
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         sidePanel.setPreferredSize(new Dimension(500, 0));
-        sidePanel.setBorder(new HalfHeightLeftBorder(Color.WHITE, 2));
+        sidePanel.setBorder(new HalfHeightLeftBorder(Color.WHITE, 10));
         frame.getContentPane().add(sidePanel, BorderLayout.LINE_END);
 
 
@@ -190,7 +190,7 @@ public class SecondaryMonitorGui {
 
                 for (String badge : badges) {
                     BadgeLabel badgeLabel = new BadgeLabel(badge);
-                    badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
+                    badgeLabel.setBadgeColor(new Color(57, 62, 84, 200));
                     badgeLabel.setFont(badgeLabel.getFont().deriveFont(36.0f));
                     badgesPanel.add(badgeLabel);
                 }
@@ -222,7 +222,7 @@ public class SecondaryMonitorGui {
                 b.add(Box.createHorizontalGlue());
 
                 BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
-                badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
+                badgeLabel.setBadgeColor(new Color(57, 62, 84, 200));
                 badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
                 b.add(badgeLabel);
 

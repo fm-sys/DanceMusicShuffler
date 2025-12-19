@@ -79,6 +79,8 @@ public class MainGui {
     JButton drawerButton = new JButton("\u2630");  // ☰
     Drawer drawer;
 
+    BufferedImage backgroundImage;
+
     public MainGui(Collection<PlaylistSimplified> lists) {
 
         lists
@@ -92,6 +94,13 @@ public class MainGui {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                 UnsupportedLookAndFeelException e) {
+            throw new RuntimeException(e);
+        }
+
+        // load global background image for "winterball"
+        try {
+            backgroundImage = ImageIO.read(new URI("https://wallpaperaccess.com/full/1762891.jpg").toURL());
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -769,13 +778,16 @@ public class MainGui {
                     if (track.getAlbum() != null && track.getAlbum().getImages() != null) {
                         Arrays.stream(track.getAlbum().getImages()).findFirst().ifPresent(image -> new Thread(() -> {
                             try {
-                                URI url = new URI(image.getUrl());
-                                BufferedImage rawImage = ImageIO.read(url.toURL());
 
-                                BufferedImage coverImage = ImageUtils.makeRoundedCorner(rawImage, 50);
-                                BufferedImage backgroundImage = ImageUtils.dimImage(ImageUtils.blurWithEdgeExtension(rawImage, 150), 0.5f);
+                                // fixme: temporarily disable image processing for winterball
 
-                                secondaryMonitorGui.update(coverImage, backgroundImage, track, badges);
+                                // URI url = new URI(image.getUrl());
+                                // BufferedImage rawImage = ImageIO.read(url.toURL());
+                                //
+                                // BufferedImage coverImage = ImageUtils.makeRoundedCorner(rawImage, 50);
+                                // BufferedImage backgroundImage = ImageUtils.dimImage(ImageUtils.blurWithEdgeExtension(rawImage, 150), 0.5f);
+
+                                secondaryMonitorGui.update(null/*coverImage*/, backgroundImage, track, badges);
 
                                 java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
                                 response.getQueue().forEach(item -> nextPlaylists.add(getBadges(item)));
