@@ -166,7 +166,9 @@ public class SecondaryMonitorGui {
     public void update(BufferedImage coverImage, BufferedImage background, Track track, List<String> badges) {
         SwingUtilities.invokeLater(() -> {
             try {
-                cover.setIcon(new ImageIcon(coverImage));
+                if (coverImage != null) {
+                    cover.setIcon(new ImageIcon(coverImage));
+                }
 
                 backgroundImage = background;
                 if (coloredBackground) {
