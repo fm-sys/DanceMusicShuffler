@@ -26,8 +26,10 @@ public class PreventSleep {
                     pixel *= -1; // Alternate direction
                     Thread.sleep(MOUSE_MOVE_INTERVAL);
                 }
-            } catch (Exception e) {
+            } catch (AWTException e) {
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                System.out.println("Prevent sleep service stopped.");
             }
         });
 
