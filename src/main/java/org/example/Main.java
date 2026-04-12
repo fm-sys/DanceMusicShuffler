@@ -2,7 +2,7 @@ package org.example;
 
 import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
-import org.example.api.SpotifyWindowTitle;
+import org.example.api.LocalSpotifyProvider;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
@@ -40,7 +40,7 @@ public class Main {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-        SpotifyWindowTitle.searchSpotifyWindowInitial(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
+        LocalSpotifyProvider.INSTANCE.initialize(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
 
         getPlaylists(() -> {
             splashScreen.dispose();

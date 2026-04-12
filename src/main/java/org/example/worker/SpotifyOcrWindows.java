@@ -5,7 +5,8 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 import net.sourceforge.tess4j.*;
 import net.sourceforge.tess4j.util.LoadLibs;
 import org.example.OcrOverlayWindow;
-import org.example.api.SpotifyWindowTitle;
+import org.example.api.LocalSpotifyProvider;
+import org.example.api.LocalSpotifyWindows;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,7 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.List;
 
-public class SpotifyOcrProcessor implements Runnable {
+public class SpotifyOcrWindows implements Runnable {
 
     private volatile boolean running = false;
     private Thread thread;
@@ -21,7 +22,7 @@ public class SpotifyOcrProcessor implements Runnable {
     private final OcrOverlayWindow overlay;
     Tesseract tesseract;
 
-    public SpotifyOcrProcessor(OcrOverlayWindow overlay) {
+    public SpotifyOcrWindows(OcrOverlayWindow overlay) {
         this.overlay = overlay;
 
         tesseract = new Tesseract();
@@ -82,13 +83,13 @@ public class SpotifyOcrProcessor implements Runnable {
     }
 
     private boolean processSpotifyWindow() {
-        HWND hwnd = SpotifyWindowTitle.getSpotifyHWND();
+        HWND hwnd = ((LocalSpotifyWindows) LocalSpotifyProvider.INSTANCE).getSpotifyHWND();
 
         if (hwnd == null) {
             return false;
         }
 
-        if (!SpotifyWindowTitle.isSpotifyInForeground()) {
+        if (!((LocalSpotifyWindows) LocalSpotifyProvider.INSTANCE).isSpotifyInForeground()) {
             return false;
         }
 
@@ -119,7 +120,7 @@ public class SpotifyOcrProcessor implements Runnable {
         }
 
         // Check again in case the window lost focus, then it's not worth processing further
-        if (!SpotifyWindowTitle.isSpotifyInForeground()) {
+        if (!((LocalSpotifyWindows) LocalSpotifyProvider.INSTANCE).isSpotifyInForeground()) {
             return false;
         }
 
