@@ -9,6 +9,7 @@ import org.example.models.TrackWithBadges;
 import org.example.models.UsedTrack;
 import org.example.util.ImageUtils;
 import org.example.util.PopupMenuOpenedListener;
+import org.example.util.Scheduler;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
 import org.example.api.SpotifyWindowTitle;
@@ -26,10 +27,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
@@ -40,8 +38,6 @@ import java.util.stream.Stream;
 
 public class MainGui {
 
-    public static final int SPOTIFY_WEB_API_DELAY = 500;
-
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
 
     final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
@@ -50,9 +46,6 @@ public class MainGui {
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
     ShuffleAlgorithm shuffleAlgorithm;
-
-    String activeDeviceId = null;
-    boolean comboboxListenersEnabled = true;
 
     JFrame frame;
 
@@ -79,6 +72,37 @@ public class MainGui {
     JButton drawerButton = new JButton("\u2630");  // ☰
     Drawer drawer;
 
+    JComboBox<DeviceDisplayable> devicesComboBox;
+    String activeDeviceId = null;
+
+    private final ActionListener deviceChangeListener = (ActionEvent e) -> {
+        DeviceDisplayable selected = (DeviceDisplayable) devicesComboBox.getSelectedItem();
+        if (selected != null) {
+            if (selected.device().getIs_active()) {
+                System.out.println("Device "+ selected.device().getName() + " was already active.");
+                activeDeviceId = selected.device().getId(); // make sure that local id is in sync
+                return;
+            }
+
+            System.out.println("Selected device: " + selected.device().getName());
+            activeDeviceId = selected.device().getId();
+
+            devicesComboBox.setEnabled(false);
+            JsonArray array = new JsonArray();
+            array.add(selected.device().getId());
+            Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
+                    (res, ex) -> {
+                        if (ex == null) {
+                            System.out.println("Transferred playback to device: " + selected.device().getName());
+                        } else {
+                            System.err.println("Caught Exception: " + ex.getMessage());
+                        }
+                        Scheduler.waitForWebApiDelayAndRun(() -> devicesComboBox.setEnabled(true));
+                    }
+            );
+        }
+    };
+
     public MainGui(Collection<PlaylistSimplified> lists) {
 
         lists
@@ -92,7 +116,8 @@ public class MainGui {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                 UnsupportedLookAndFeelException e) {
-            throw new RuntimeException(e);
+            System.err.println("Couldn't set system look and feel");
+            e.printStackTrace();
         }
 
         frame = new JFrame();
@@ -106,9 +131,7 @@ public class MainGui {
         new Timer(1000, evt -> {
             if (SpotifyWindowTitle.titleChanged()) {
                 secondaryMonitorGui.setPaused(SpotifyWindowTitle.pausedBasedOnLastTitle());
-                Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e -> updateNowPlaying());
-                timer.setRepeats(false);
-                timer.start();
+                Scheduler.waitForWebApiDelayAndRun(this::updateNowPlaying);
             }
         }).start();
 
@@ -316,9 +339,7 @@ public class MainGui {
                     .thenAccept(success -> {
                         if (success) {
                             shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), activeDeviceId).thenAccept(result -> {
-                                Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e1 -> restoreLoadAndShuffleButton());
-                                timer.setRepeats(false);
-                                timer.start();
+                                Scheduler.waitForWebApiDelayAndRun(this::restoreLoadAndShuffleButton);
                             });
                         } else {
                             JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
@@ -615,9 +636,7 @@ public class MainGui {
         buttonPanel.add(playButton);
         playButton.addActionListener(e -> Api.INSTANCE.startResumeUsersPlayback().device_id(activeDeviceId).build().executeAsync().whenComplete(
                 (res, ex) -> {
-                    Timer timer = new Timer(SPOTIFY_WEB_API_DELAY, e1 -> updatePlaybackState());
-                    timer.setRepeats(false);
-                    timer.start();
+                    Scheduler.waitForWebApiDelayAndRun(this::updatePlaybackState);
 
                     if (ex != null) {
                         System.err.println("startResumeUsersPlayback: Caught Exception: " + ex.getMessage());
@@ -639,7 +658,7 @@ public class MainGui {
         ));
         buttonPanel.add(forwardButton);
 
-        JComboBox<DeviceDisplayable> devicesComboBox = new JComboBox<>();
+        devicesComboBox = new JComboBox<>();
         devicesComboBox.setOpaque(false);
 
         devicesComboBox.setPrototypeDisplayValue(new DeviceDisplayable(new Device.Builder().setName("A device name").build()));
@@ -647,53 +666,21 @@ public class MainGui {
         devicesComboBox.addPopupMenuListener(new PopupMenuOpenedListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                updateDevicesComboBox(devicesComboBox);
+                updateDevicesComboBox();
             }
         });
 
-        devicesComboBox.addActionListener(e -> {
-            if (!comboboxListenersEnabled) {
-                return; // Prevents triggering action listeners while updating
-            }
-
-            DeviceDisplayable selected = (DeviceDisplayable) devicesComboBox.getSelectedItem();
-            if (selected != null) {
-                System.out.println("Selected device: " + selected.device().getName());
-                activeDeviceId = selected.device().getId();
-                JsonArray array = new JsonArray();
-                array.add(selected.device().getId());
-                Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
-                        (res, ex) -> {
-                            if (ex != null) {
-                                System.err.println("Caught Exception: " + ex.getMessage());
-                            } else {
-                                System.out.println("Transferred playback to device: " + selected.device().getName());
-                            }
-                        }
-                );
-            }
-        });
-
-        updateDevicesComboBox(devicesComboBox);
-
-        for (int i = 0; i < devicesComboBox.getItemCount(); i++) {
-            DeviceDisplayable device = devicesComboBox.getItemAt(i);
-            if (device.device().getType().equals("Computer")) {
-                devicesComboBox.setSelectedItem(device);
-                if (device.device().getIs_active()) {
-                    break;
-                }
-            }
-        }
+        updateDevicesComboBox();
 
         buttonPanel.add(devicesComboBox);
         return buttonPanel;
     }
 
-    private void updateDevicesComboBox(JComboBox<DeviceDisplayable> devicesComboBox) {
+    private void updateDevicesComboBox() {
         java.util.List<DeviceDisplayable> devices = new ArrayList<>(fetchDevices());
 
-        comboboxListenersEnabled = false; // Prevents triggering action listeners while updating
+        devicesComboBox.removeActionListener(deviceChangeListener);
+
         devicesComboBox.removeAllItems();
         devices.sort((d1, d2) -> { // "Computers" first, then other devices
             if (d1.device().getType().equals("Computer") && !d2.device().getType().equals("Computer")) {
@@ -709,7 +696,9 @@ public class MainGui {
                 devicesComboBox.setSelectedItem(device);
             }
         }
-        comboboxListenersEnabled = true; // Re-enable listeners
+
+        devicesComboBox.addActionListener(deviceChangeListener);
+        devicesComboBox.setSelectedItem(devicesComboBox.getSelectedItem());
     }
 
     private static java.util.List<DeviceDisplayable> fetchDevices() {
