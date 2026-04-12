@@ -5,22 +5,23 @@ import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 
-public class SpotifyWindowTitle {
-    static HWND spotifyWindow = null;
-    static String lastWindowTitle = null;
+public class LocalSpotifyWindows implements LocalSpotifyProvider.LocalSpotifyIntegration {
+    HWND spotifyWindow = null;
+    String lastWindowTitle = null;
 
     public static void main(String[] args) {
-        searchSpotifyWindowInitial(null);
+        LocalSpotifyWindows spotifyWindowTitle = new LocalSpotifyWindows();
+        spotifyWindowTitle.initialize(null);
 
-        while (spotifyWindow != null) {
-            if (titleChanged()) {
-                System.out.println("Spotify window title changed: " + lastWindowTitle);
+        while (spotifyWindowTitle.spotifyWindow != null) {
+            if (spotifyWindowTitle.titleHasChanged()) {
+                System.out.println("Spotify window title changed: " + spotifyWindowTitle.lastWindowTitle);
             }
         }
 
     }
 
-    public static void searchSpotifyWindowInitial(IPlaylistItem currentTrack) {
+    public void initialize(IPlaylistItem currentTrack) {
         // Enumerate all top-level windows
         User32.INSTANCE.EnumWindows((hWnd, arg1) -> {
             // Get the window title length
@@ -41,14 +42,14 @@ public class SpotifyWindowTitle {
         }, null);
     }
 
-    private static String getWText(HWND hWnd) {
+    private String getWText(HWND hWnd) {
         int titleLength = User32.INSTANCE.GetWindowTextLength(hWnd) + 1;
         char[] windowText = new char[titleLength];
         User32.INSTANCE.GetWindowText(hWnd, windowText, titleLength);
         return Native.toString(windowText).trim();
     }
 
-    public static boolean titleChanged() {
+    public boolean titleHasChanged() {
         if (spotifyWindow == null) {
             return false;
         }
@@ -61,22 +62,22 @@ public class SpotifyWindowTitle {
         return true;
     }
 
-    public static boolean pausedBasedOnLastTitle() {
+    public boolean isPaused() {
         if (lastWindowTitle == null) {
             return false;
         }
         return lastWindowTitle.equals("Spotify Premium");
     }
 
-    public static boolean initialized() {
+    public boolean isInitialized() {
         return spotifyWindow != null;
     }
 
-    public static HWND getSpotifyHWND() {
+    public HWND getSpotifyHWND() {
         return spotifyWindow;
     }
 
-    public static boolean isSpotifyInForeground() {
+    public boolean isSpotifyInForeground() {
         HWND foregroundWindow = User32.INSTANCE.GetForegroundWindow();
         return foregroundWindow != null && foregroundWindow.equals(spotifyWindow);
     }

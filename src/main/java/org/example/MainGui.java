@@ -3,19 +3,16 @@ package org.example;
 import com.google.gson.JsonArray;
 import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
+import org.example.api.LocalSpotifyProvider;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
+import org.example.models.PlaylistModel;
 import org.example.models.TrackWithBadges;
 import org.example.models.UsedTrack;
 import org.example.util.ImageUtils;
 import org.example.util.PopupMenuOpenedListener;
 import org.example.util.Scheduler;
-import org.example.worker.PersistentPreferences;
-import org.example.worker.PlaylistLoader;
-import org.example.api.SpotifyWindowTitle;
-import org.example.models.PlaylistModel;
-import org.example.worker.ShuffleAlgorithm;
-import org.example.worker.SpotifyOcrProcessor;
+import org.example.worker.*;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
@@ -41,7 +38,7 @@ public class MainGui {
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
 
     final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
-    final SpotifyOcrProcessor spotifyOcrProcessor = new SpotifyOcrProcessor(ocrOverlayWindow);
+    final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
 
     ArrayList<PlaylistModel> playlists = new ArrayList<>();
     ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
@@ -129,8 +126,10 @@ public class MainGui {
         createNowPlaying();
 
         new Timer(1000, evt -> {
-            if (SpotifyWindowTitle.titleChanged() || (secondaryMonitorGui.getProgress() == 1.0 && !secondaryMonitorGui.isPaused())) {
-                secondaryMonitorGui.setPaused(SpotifyWindowTitle.pausedBasedOnLastTitle());
+            if (LocalSpotifyProvider.INSTANCE.titleHasChanged() || (secondaryMonitorGui.getProgress() == 1.0 && !secondaryMonitorGui.isPaused())) {
+                if (LocalSpotifyProvider.INSTANCE.isInitialized()) {
+                    secondaryMonitorGui.setPaused(LocalSpotifyProvider.INSTANCE.isPaused());
+                }
                 Scheduler.waitForWebApiDelayAndRun(this::updateNowPlaying);
             }
         }).start();
@@ -447,16 +446,18 @@ public class MainGui {
         queueLabel.setFont(queueLabel.getFont().deriveFont(Font.BOLD));
         outerPanel.add(AlignHelper.center(queueLabel));
 
-        JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify In-App Overlay (experimental)");
-        ocrOverlayCheckbox.setSelected(false);
-        ocrOverlayCheckbox.addActionListener(e -> {
-            if (ocrOverlayCheckbox.isSelected()) {
-                spotifyOcrProcessor.start();
-            } else {
-                spotifyOcrProcessor.stop();
-            }
-        });
-        outerPanel.add(AlignHelper.center(ocrOverlayCheckbox));
+        if (spotifyOcrProcessor.isSupported()) {
+            JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify In-App Overlay (experimental)");
+            ocrOverlayCheckbox.setSelected(false);
+            ocrOverlayCheckbox.addActionListener(e -> {
+                if (ocrOverlayCheckbox.isSelected()) {
+                    spotifyOcrProcessor.start();
+                } else {
+                    spotifyOcrProcessor.stop();
+                }
+            });
+            outerPanel.add(AlignHelper.center(ocrOverlayCheckbox));
+        }
 
         queueListPanel = new JPanel();
         queueListPanel.setLayout(new BoxLayout(queueListPanel, BoxLayout.Y_AXIS));
@@ -728,8 +729,8 @@ public class MainGui {
         Api.INSTANCE.getTheUsersQueue().build().executeAsync().thenAccept(response -> {
             recreateQueueList(response.getQueue());
 
-            if (!SpotifyWindowTitle.initialized()) {
-                SpotifyWindowTitle.searchSpotifyWindowInitial(response.getCurrentlyPlaying());
+            if (!LocalSpotifyProvider.INSTANCE.isInitialized()) {
+                LocalSpotifyProvider.INSTANCE.initialize(response.getCurrentlyPlaying());
             }
 
             nowPlayingPanel.removeAll();
