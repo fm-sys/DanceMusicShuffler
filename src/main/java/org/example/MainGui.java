@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+@SuppressWarnings("UnnecessaryUnicodeEscape")
 public class MainGui {
 
     final SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
