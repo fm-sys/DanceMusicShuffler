@@ -25,7 +25,7 @@ public class PersistentPreferences {
     }
 
     public PersistentPreferences(List<PlaylistModel> playlists, MainGuiParams params) {
-        this.playlists = playlists.stream().map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
+        this.playlists = playlists.stream().filter(PlaylistModel::hasModifiedConfig).map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
         this.count = params.count;
         this.cooldown = params.cooldown;
         this.groupPlaylists = params.groupPlaylists;

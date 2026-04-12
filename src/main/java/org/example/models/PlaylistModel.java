@@ -6,10 +6,15 @@ import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 import java.util.ArrayList;
 
 public class PlaylistModel {
+
+    private static final boolean DEFAULT_CHECKED = false;
+    private static final boolean DEFAULT_EXCLUSIVE = false;
+    private static final double DEFAULT_WEIGHT = 1.0;
+
     private final PlaylistSimplified playlist;
-    private boolean checked = false;
-    private boolean exclusive = false;
-    private double weight = 1.0;
+    private boolean checked = DEFAULT_CHECKED;
+    private boolean exclusive = DEFAULT_EXCLUSIVE;
+    private double weight = DEFAULT_WEIGHT;
     private ArrayList<PlaylistTrack> tracks = null;
 
     public PlaylistModel(PlaylistSimplified playlist) {
@@ -80,5 +85,9 @@ public class PlaylistModel {
             return ((PlaylistModel) obj).getPlaylist().getId().equals(playlist.getId());
         }
         return false;
+    }
+
+    public boolean hasModifiedConfig() {
+        return checked != DEFAULT_CHECKED || exclusive != DEFAULT_EXCLUSIVE || weight != DEFAULT_WEIGHT;
     }
 }
