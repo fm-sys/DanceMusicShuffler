@@ -29,6 +29,10 @@ public class AnimatedWavyProgressBar extends JComponent {
         repaint();
     }
 
+    public float getProgress() {
+        return progress;
+    }
+
     public void setPaused(boolean paused) {
         this.paused = paused;
         repaint();

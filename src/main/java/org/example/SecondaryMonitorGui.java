@@ -248,9 +248,17 @@ public class SecondaryMonitorGui {
         this.paused = paused;
     }
 
+    public boolean isPaused() {
+        return paused;
+    }
+
     public void setProgress(long progressMs, long durationMs) {
         this.startTimestamp = System.currentTimeMillis() - progressMs;
         this.duration = durationMs;
+    }
+
+    public float getProgress() {
+        return progressBar.getProgress();
     }
 
     public void setSidePanelVisible(boolean visible) {

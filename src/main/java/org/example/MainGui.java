@@ -129,7 +129,7 @@ public class MainGui {
         createNowPlaying();
 
         new Timer(1000, evt -> {
-            if (SpotifyWindowTitle.titleChanged()) {
+            if (SpotifyWindowTitle.titleChanged() || (secondaryMonitorGui.getProgress() == 1.0 && !secondaryMonitorGui.isPaused())) {
                 secondaryMonitorGui.setPaused(SpotifyWindowTitle.pausedBasedOnLastTitle());
                 Scheduler.waitForWebApiDelayAndRun(this::updateNowPlaying);
             }
