@@ -4,7 +4,7 @@ import org.example.OcrOverlayWindow;
 
 public class SpotifyOcrIntegration {
 
-    private SpotifyOcrWindows windowsImpl;
+    private final SpotifyOcrWindows windowsImpl;
 
     public static SpotifyOcrIntegration create(OcrOverlayWindow overlay) {
         if (com.sun.jna.Platform.isWindows()) {
