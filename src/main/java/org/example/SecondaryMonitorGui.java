@@ -175,8 +175,8 @@ public class SecondaryMonitorGui {
                     backgroundPanel.setBackgroundImage(backgroundImage);
                 }
 
-                titleLabel.setText(track.getName());
-                artistLabel.setText(Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")));
+                titleLabel.setText("The Title of an Fantastic Dance Song");
+                artistLabel.setText("The Artist");
 
                 if (currentTrackId == null) {
                     currentTrackId = track.getId();

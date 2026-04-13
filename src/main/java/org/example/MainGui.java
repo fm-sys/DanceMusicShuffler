@@ -760,7 +760,7 @@ public class MainGui {
                     if (track.getAlbum() != null && track.getAlbum().getImages() != null) {
                         Arrays.stream(track.getAlbum().getImages()).findFirst().ifPresent(image -> new Thread(() -> {
                             try {
-                                URI url = new URI(image.getUrl());
+                                URI url = java.nio.file.Paths.get("doc", "imgs", "cover.png").toUri();
                                 BufferedImage rawImage = ImageIO.read(url.toURL());
 
                                 BufferedImage coverImage = ImageUtils.makeRoundedCorner(rawImage, 50);
