@@ -1,6 +1,6 @@
 package org.example.models;
 
-import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
+import se.michaelthelin.spotify.model_objects.interfaces.IPlaylist;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
 import java.util.ArrayList;
@@ -11,17 +11,19 @@ public class PlaylistModel {
     private static final boolean DEFAULT_EXCLUSIVE = false;
     private static final double DEFAULT_WEIGHT = 1.0;
 
-    private final PlaylistSimplified playlist;
+    private final IPlaylist playlist;
+    private ArrayList<PlaylistTrack> tracks = null;
+    private boolean fromConfig = false;
+
     private boolean checked = DEFAULT_CHECKED;
     private boolean exclusive = DEFAULT_EXCLUSIVE;
     private double weight = DEFAULT_WEIGHT;
-    private ArrayList<PlaylistTrack> tracks = null;
 
-    public PlaylistModel(PlaylistSimplified playlist) {
+    public PlaylistModel(IPlaylist playlist) {
         this.playlist = playlist;
     }
 
-    public PlaylistSimplified getPlaylist() {
+    public IPlaylist getPlaylist() {
         return playlist;
     }
 
@@ -89,5 +91,19 @@ public class PlaylistModel {
 
     public boolean hasModifiedConfig() {
         return checked != DEFAULT_CHECKED || exclusive != DEFAULT_EXCLUSIVE || weight != DEFAULT_WEIGHT;
+    }
+
+    /**
+     * Get if the playlist was added from a config file.
+     */
+    public boolean isFromConfig() {
+        return fromConfig;
+    }
+
+    /**
+     * Set if the playlist was added from a config file.
+     */
+    public void setFromConfig(boolean fromConfig) {
+        this.fromConfig = fromConfig;
     }
 }

@@ -106,7 +106,7 @@ public class ShuffleAlgorithm {
         }
         wasExclusive = chosenPlaylist.isExclusive();
 
-        List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getTrack).filter(this::wasNotShuffled).toList();
+        List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getItem).filter(this::wasNotShuffled).toList();
         if (allowedTracks.isEmpty()) {
             System.out.println("No allowed tracks available in playlist: " + chosenPlaylist.getPlaylist().getName());
             return false;

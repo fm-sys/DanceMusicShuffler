@@ -3,10 +3,12 @@ package org.example.worker;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.models.PlaylistModel;
+import se.michaelthelin.spotify.SpotifyApiThreading;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class PersistentPreferences {
@@ -80,26 +82,36 @@ public class PersistentPreferences {
      *
      * @param playlists The playlist objects to be enriched.
      */
-    public static MainGuiParams load(List<PlaylistModel> playlists) {
+    public static CompletableFuture<MainGuiParams> loadAsync(List<PlaylistModel> playlists, String fileName) {
+        return SpotifyApiThreading.executeAsync(() -> load(playlists, fileName));
+    }
+
+    private static MainGuiParams load(List<PlaylistModel> playlists, String fileName) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
             // Read JSON from a file and convert it to a Java object
-            PersistentPreferences preferences = objectMapper.readValue(new File("prefs.json"), PersistentPreferences.class);
+            PersistentPreferences preferences = objectMapper.readValue(new File(fileName), PersistentPreferences.class);
 
             // Enrich the playlists with the loaded preferences
-            for (PlaylistModel playlist : playlists) {
-                for (PersistentPlaylistModel persistentPlaylist : preferences.playlists) {
+            for (PersistentPlaylistModel persistentPlaylist : preferences.playlists) {
+                boolean found = false;
+                for (PlaylistModel playlist : playlists) {
                     if (playlist.getPlaylist().getId().equals(persistentPlaylist.id)) {
                         playlist.setChecked(persistentPlaylist.checked);
                         playlist.setExclusive(persistentPlaylist.exclusive);
                         playlist.setWeight(persistentPlaylist.weight);
+                        found = true;
+                        break;
                     }
+                }
+                if (!found) {
+                    PlaylistLoader.loadPlaylistModelFromPrefs(persistentPlaylist, playlists);
                 }
             }
             return new MainGuiParams(preferences.count, preferences.cooldown, preferences.groupPlaylists, preferences.searchString, preferences.showSidePanel, preferences.showCover, preferences.colorBackground);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Failed to load preferences: " + e.getMessage());
             return null;
         }
     }

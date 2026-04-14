@@ -260,20 +260,9 @@ public class MainGui {
 
         JButton loadButton = new JButton("\u2191   Load configuration");
         loadButton.addActionListener(e -> {
-            PersistentPreferences.MainGuiParams params = PersistentPreferences.load(playlists);
-            if (params != null) {
-                songNumberSpinner.setValue(params.count);
-                cooldownSpinner.setValue(params.cooldown);
-                groupPlaylistsCheckbox.setSelected(params.groupPlaylists);
-                playlistsFilterTextField.setText(params.searchString);
-                secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel);
-                secondaryMonitorGui.setSidePanelVisible(params.showSidePanel);
-                secondaryGuiCoverCheckbox.setSelected(params.showSidePanel);
-                secondaryMonitorGui.setCoverVisible(params.showCover);
-                secondaryGuiColoredBackgroundCheckbox.setSelected(params.colorBackground);
-                secondaryMonitorGui.setColoredBackground(params.colorBackground);
-                recreatePlaylistsList();
-            }
+            loadButton.setText("Loading...");
+            loadButton.setEnabled(false);
+            PersistentPreferences.loadAsync(playlists, "prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadButton, prefs)));
         });
         labeledPanelConfig.add(loadButton);
 
@@ -360,6 +349,30 @@ public class MainGui {
         centerPanel.add(expandedButtonPanel);
 
         centerPanel.add(Box.createVerticalGlue());
+    }
+
+    private void applyPreferences(JButton loadPrefsButton, PersistentPreferences.MainGuiParams params) {
+        if (params != null) {
+            songNumberSpinner.setValue(params.count);
+            cooldownSpinner.setValue(params.cooldown);
+            groupPlaylistsCheckbox.setSelected(params.groupPlaylists);
+            playlistsFilterTextField.setText(params.searchString);
+            secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel);
+            secondaryMonitorGui.setSidePanelVisible(params.showSidePanel);
+            secondaryGuiCoverCheckbox.setSelected(params.showSidePanel);
+            secondaryMonitorGui.setCoverVisible(params.showCover);
+            secondaryGuiColoredBackgroundCheckbox.setSelected(params.colorBackground);
+            secondaryMonitorGui.setColoredBackground(params.colorBackground);
+            recreatePlaylistsList();
+        } else {
+            int result = JOptionPane.showConfirmDialog(frame, "No user configuration stored, load default prefs?", "Load defaults", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (result == JOptionPane.YES_OPTION) {
+                PersistentPreferences.loadAsync(playlists, "default-prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadPrefsButton, prefs)));
+                return;
+            }
+        }
+        loadPrefsButton.setText("\u2191   Load configuration");
+        loadPrefsButton.setEnabled(true);
     }
 
     private void restoreLoadAndShuffleButton() {
@@ -575,7 +588,7 @@ public class MainGui {
         playlistsListPanel.removeAll();
 
         playlistsFiltered.forEach(playlist -> {
-            JCheckBox checkBox = new JCheckBox(playlist.getPlaylist().getName() + " (" + playlist.getPlaylist().getTracks().getTotal() + " Lieder)");
+            JCheckBox checkBox = new JCheckBox(playlist.getPlaylist().getName() + " (" + playlist.getPlaylist().getItems().getTotal() + " Lieder)" + (playlist.isFromConfig() ? " [playlist from config]" : ""));
             checkBox.setSelected(playlist.isChecked());
             checkBox.addActionListener(e -> {
                 playlist.setChecked(checkBox.isSelected());
@@ -816,7 +829,7 @@ public class MainGui {
             if (usedTrack != null && usedTrack.from().getPlaylist().getId().equals(playlist.getPlaylist().getId())) {
                 continue;
             }
-            if (playlist.getTracks().stream().anyMatch(playlistTrack -> track.getId().equals(playlistTrack.getTrack().getId()))) {
+            if (playlist.getTracks().stream().anyMatch(playlistTrack -> track.getId().equals(playlistTrack.getItem().getId()))) {
                 badges.add(playlist.getPlaylist().getName());
             }
         }
