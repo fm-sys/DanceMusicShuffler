@@ -21,7 +21,7 @@ Or just run the main method in the `Main` class.
 
 ### Limitations:
 
-As we use the Spotify WebAPI in development mode, you need to edit the list of authorized users if you want to run this software on behalf of a foreign spotify user account:
+As we use the Spotify WebAPI in development mode, we need to manually add your Spotify user account to the list of authorized users before you can access the API:
 https://developer.spotify.com/dashboard/b7cea7e9e1af4b16b985cd76af7ea846/users
 
 Alternatively, you can create your own Spotify API key and change the `clientId` in `API.java`.
