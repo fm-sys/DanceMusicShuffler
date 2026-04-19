@@ -2,6 +2,7 @@ package org.example.worker;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.PlaylistStore;
 import org.example.models.PlaylistModel;
 import se.michaelthelin.spotify.SpotifyApiThreading;
 
@@ -26,8 +27,8 @@ public class PersistentPreferences {
         // Default constructor for Jackson
     }
 
-    public PersistentPreferences(List<PlaylistModel> playlists, MainGuiParams params) {
-        this.playlists = playlists.stream().filter(PlaylistModel::hasModifiedConfig).map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
+    public PersistentPreferences(PlaylistStore playlistStore, MainGuiParams params) {
+        this.playlists = playlistStore.getPlaylists().stream().filter(PlaylistModel::hasModifiedConfig).map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
         this.count = params.count;
         this.cooldown = params.cooldown;
         this.groupPlaylists = params.groupPlaylists;
@@ -65,7 +66,7 @@ public class PersistentPreferences {
         public boolean showCover;
         public boolean colorBackground;
 
-        public MainGuiParams(int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean showCover, boolean colorBackground) {
+        private MainGuiParams(int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean showCover, boolean colorBackground) {
             this.count = count;
             this.cooldown = cooldown;
             this.groupPlaylists = groupPlaylists;
@@ -80,13 +81,13 @@ public class PersistentPreferences {
      * Load the persistent preferences from a file.
      * The file is expected to be in JSON format.
      *
-     * @param playlists The playlist objects to be enriched.
+     * @param playlistStore The playlist store object to be enriched.
      */
-    public static CompletableFuture<MainGuiParams> loadAsync(List<PlaylistModel> playlists, String fileName) {
-        return SpotifyApiThreading.executeAsync(() -> load(playlists, fileName));
+    public static CompletableFuture<MainGuiParams> loadAsync(PlaylistStore playlistStore, String fileName) {
+        return SpotifyApiThreading.executeAsync(() -> load(playlistStore, fileName));
     }
 
-    private static MainGuiParams load(List<PlaylistModel> playlists, String fileName) {
+    private static MainGuiParams load(PlaylistStore playlistStore, String fileName) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
@@ -96,7 +97,7 @@ public class PersistentPreferences {
             // Enrich the playlists with the loaded preferences
             for (PersistentPlaylistModel persistentPlaylist : preferences.playlists) {
                 boolean found = false;
-                for (PlaylistModel playlist : playlists) {
+                for (PlaylistModel playlist : playlistStore.getPlaylists()) {
                     if (playlist.getPlaylist().getId().equals(persistentPlaylist.id)) {
                         playlist.setChecked(persistentPlaylist.checked);
                         playlist.setExclusive(persistentPlaylist.exclusive);
@@ -106,7 +107,7 @@ public class PersistentPreferences {
                     }
                 }
                 if (!found) {
-                    PlaylistLoader.loadPlaylistModelFromPrefs(persistentPlaylist, playlists);
+                    PlaylistLoader.loadPlaylistModelFromPrefs(persistentPlaylist, playlistStore);
                 }
             }
             return new MainGuiParams(preferences.count, preferences.cooldown, preferences.groupPlaylists, preferences.searchString, preferences.showSidePanel, preferences.showCover, preferences.colorBackground);
@@ -116,8 +117,8 @@ public class PersistentPreferences {
         }
     }
 
-    public static void store(List<PlaylistModel> playlists, int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean showCover, boolean colorBackground) {
-        PersistentPreferences preferences = new PersistentPreferences(playlists, new MainGuiParams(count, cooldown, groupPlaylists, searchString, showSidePanel, showCover, colorBackground));
+    public static void store(PlaylistStore playlistStore, int count, int cooldown, boolean groupPlaylists, String searchString, boolean showSidePanel, boolean showCover, boolean colorBackground) {
+        PersistentPreferences preferences = new PersistentPreferences(playlistStore, new MainGuiParams(count, cooldown, groupPlaylists, searchString, showSidePanel, showCover, colorBackground));
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {

@@ -16,16 +16,16 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class ShuffleAlgorithm {
-    ArrayList<PlaylistModel> playlists;
-    ArrayList<PlaylistGroup> playlistGroups;
+    List<PlaylistModel> playlists;
+    List<PlaylistGroup> playlistGroups;
 
     final FixedSizeQueue<PlaylistModel> recentlyUsedPlaylists = new FixedSizeQueue<>(0);
-    final ArrayList<UsedTrack> alreadyUsedTracks = new ArrayList<>();
+    final List<UsedTrack> alreadyUsedTracks = new ArrayList<>();
 
     boolean wasExclusive = false;
 
 
-    public ShuffleAlgorithm(ArrayList<PlaylistModel> playlists) {
+    public ShuffleAlgorithm(List<PlaylistModel> playlists) {
         this.playlists = playlists;
     }
 

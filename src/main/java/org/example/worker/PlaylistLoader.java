@@ -1,6 +1,7 @@
 package org.example.worker;
 
 import org.apache.hc.core5.http.ParseException;
+import org.example.PlaylistStore;
 import org.example.api.Api;
 import org.example.models.PlaylistModel;
 import se.michaelthelin.spotify.SpotifyApiThreading;
@@ -20,14 +21,14 @@ public class PlaylistLoader {
         // Prevent instantiation
     }
 
-    public static void loadPlaylistModelFromPrefs(PersistentPreferences.PersistentPlaylistModel loadFrom, List<PlaylistModel> addTo) {
+    public static void loadPlaylistModelFromPrefs(PersistentPreferences.PersistentPlaylistModel loadFrom, PlaylistStore playlistStore) {
         try {
             PlaylistModel playlistModel = new PlaylistModel(Api.INSTANCE.getPlaylist(loadFrom.id).build().execute());
             playlistModel.setChecked(loadFrom.checked);
             playlistModel.setExclusive(loadFrom.exclusive);
             playlistModel.setWeight(loadFrom.weight);
             playlistModel.setFromConfig(true);
-            addTo.add(playlistModel);
+            playlistStore.addPlaylist(playlistModel);
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             System.out.println("Failed to load playlist with id " + loadFrom.id + ": " + e.getMessage());
         }
@@ -35,7 +36,7 @@ public class PlaylistLoader {
 
     private static void loadPlaylistItemsInternal(Collection<PlaylistModel> playlists) throws IOException, ParseException, SpotifyWebApiException {
         for (PlaylistModel playlist : playlists) {
-            if (!playlist.isChecked() || playlist.getTracks() != null) {
+            if (playlist.getTracks() != null) {
                 continue;
             }
 
@@ -80,7 +81,7 @@ public class PlaylistLoader {
 
     /**
      * Loads songs of the given playlists synchronously.
-     * Playlists which already have their tracks loaded or are not checked will be skipped.
+     * Playlists which already have their tracks loaded will be skipped.
      *
      * @param playlists The collection of PlaylistModel objects to load.
      * @return true if the playlists were loaded successfully, false otherwise.
@@ -97,7 +98,7 @@ public class PlaylistLoader {
 
     /**
      * Loads songs of the given playlists asynchronously.
-     * Playlists which already have their tracks loaded or are not checked will be skipped.
+     * Playlists which already have their tracks loaded will be skipped.
      *
      * @param playlists The collection of PlaylistModel objects to load.
      * @return A CompletableFuture that will complete with true if the playlists were loaded successfully, false otherwise.

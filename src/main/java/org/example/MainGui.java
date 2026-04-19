@@ -41,13 +41,10 @@ public class MainGui {
     final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
     final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
 
-    ArrayList<PlaylistModel> playlists = new ArrayList<>();
-    ArrayList<PlaylistModel> playlistsFiltered = new ArrayList<>();
-    ShuffleAlgorithm shuffleAlgorithm;
+    PlaylistStore playlistStore = new PlaylistStore();
+    ShuffleAlgorithm shuffleAlgorithm = new ShuffleAlgorithm(playlistStore.getPlaylists());
 
     JFrame frame;
-
-    String filterText;
 
     TristateCheckBox selectAllCheckbox;
     HintTextField playlistsFilterTextField;
@@ -102,13 +99,7 @@ public class MainGui {
     };
 
     public MainGui(Collection<PlaylistSimplified> lists) {
-
-        lists
-//                .stream()
-//                .sorted(Comparator.comparing(PlaylistSimplified::getName))
-                .forEach(playlist -> playlists.add(new PlaylistModel(playlist)));
-        playlistsFiltered.addAll(playlists);
-        shuffleAlgorithm = new ShuffleAlgorithm(playlists);
+        playlistStore.addPlaylists(lists.stream().map(PlaylistModel::new).toList());
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -262,7 +253,7 @@ public class MainGui {
         loadButton.addActionListener(e -> {
             loadButton.setText("Loading...");
             loadButton.setEnabled(false);
-            PersistentPreferences.loadAsync(playlists, "prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadButton, prefs)));
+            PersistentPreferences.loadAsync(playlistStore, "prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadButton, prefs)));
         });
         labeledPanelConfig.add(loadButton);
 
@@ -272,7 +263,7 @@ public class MainGui {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(playlists, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), filterText, secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
+            PersistentPreferences.store(playlistStore, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getTextWithoutHint(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
         });
         labeledPanelConfig.add(storeButton);
 
@@ -316,7 +307,7 @@ public class MainGui {
 
         loadAndShuffleButton = new JButton("Load Playlists and Shuffle");
         loadAndShuffleButton.addActionListener(e -> {
-            if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
+            if (playlistStore.getSelectedPlaylists().isEmpty()) {
                 JOptionPane.showMessageDialog(frame, "Please select at least one playlist to shuffle.");
                 return;
             }
@@ -324,7 +315,7 @@ public class MainGui {
             loadAndShuffleButton.setEnabled(false);
             loadAndShuffleButton.setText("Loading...");
 
-            PlaylistLoader.loadPlaylistsAsync(playlists)
+            PlaylistLoader.loadPlaylistsAsync(playlistStore.getSelectedPlaylists())
                     .thenAccept(success -> {
                         if (success) {
                             shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), activeDeviceId).thenAccept(result -> {
@@ -367,7 +358,7 @@ public class MainGui {
         } else {
             int result = JOptionPane.showConfirmDialog(frame, "No user configuration stored, load default prefs?", "Load defaults", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (result == JOptionPane.YES_OPTION) {
-                PersistentPreferences.loadAsync(playlists, "default-prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadPrefsButton, prefs)));
+                PersistentPreferences.loadAsync(playlistStore, "default-prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadPrefsButton, prefs)));
                 return;
             }
         }
@@ -382,7 +373,7 @@ public class MainGui {
     }
 
     private void showExclusivePoolDialog() {
-        if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
+        if (playlistStore.getSelectedPlaylists().isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Please select playlists for the general pool first.");
             return;
         }
@@ -395,7 +386,7 @@ public class MainGui {
         JPanel checkboxesPanel = new JPanel();
         checkboxesPanel.setLayout(new BoxLayout(checkboxesPanel, BoxLayout.Y_AXIS));
 
-        playlists.stream().filter(PlaylistModel::isChecked).forEach(playlist -> {
+        playlistStore.getSelectedPlaylists().forEach(playlist -> {
             JCheckBox checkBox = new JCheckBox(playlist.getPlaylist().getName());
             checkBox.setSelected(playlist.isExclusive());
             checkBox.addActionListener(event -> playlist.setExclusive(checkBox.isSelected()));
@@ -412,7 +403,7 @@ public class MainGui {
     }
 
     private void showWeightsDialog() {
-        if (playlistsFiltered.stream().noneMatch(PlaylistModel::isChecked)) {
+        if (playlistStore.getSelectedPlaylists().isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Please select playlists for the general pool first.");
             return;
         }
@@ -425,7 +416,7 @@ public class MainGui {
         JPanel weightsPanel = new JPanel();
         weightsPanel.setLayout(new BoxLayout(weightsPanel, BoxLayout.Y_AXIS));
 
-        playlists.stream().filter(PlaylistModel::isChecked).forEach(playlist -> {
+        playlistStore.getSelectedPlaylists().forEach(playlist -> {
             JLabel label = new JLabel(playlist.getPlaylist().getName());
             JSpinner spinner = new JSpinner();
             spinner.setModel(new SpinnerNumberModel(playlist.getWeight(), 0, 10, 0.1));
@@ -529,24 +520,8 @@ public class MainGui {
         playlistsFilterTextField = new HintTextField("Filter playlists by title/description/owner");
         playlistsFilterTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, playlistsFilterTextField.getPreferredSize().height));
         playlistsFilterTextField.addCaretListener(e -> {
-
-            if (playlistsFilterTextField.getTextWithoutHint().equals(filterText)) {
+            if (!playlistStore.setFilterText(playlistsFilterTextField.getTextWithoutHint())) {
                 return; //Text hasn't changed
-            }
-
-            filterText = playlistsFilterTextField.getTextWithoutHint();
-            if (filterText.isBlank()) {
-                playlistsFiltered.clear();
-                playlistsFiltered.addAll(playlists);
-            } else {
-                playlistsFiltered.clear();
-                for (PlaylistModel playlist : playlists) {
-                    if (playlist.getPlaylist().getName().toLowerCase().contains(filterText.toLowerCase().trim()) ||
-                            playlist.getPlaylist().getDescription().toLowerCase().contains(filterText.toLowerCase().trim()) ||
-                            playlist.getPlaylist().getOwner().getDisplayName().toLowerCase().contains(filterText.toLowerCase().trim())) {
-                        playlistsFiltered.add(playlist);
-                    }
-                }
             }
             recreatePlaylistsList();
         });
@@ -555,7 +530,7 @@ public class MainGui {
         selectAllCheckbox = new TristateCheckBox();
         selectAllCheckbox.addActionListener(e -> {
             boolean isSelected = selectAllCheckbox.isSelected();
-            playlistsFiltered.forEach(playlist -> playlist.setChecked(isSelected));
+            playlistStore.getFilteredPlaylists().forEach(playlist -> playlist.setChecked(isSelected));
             recreatePlaylistsList();
         });
 
@@ -587,7 +562,7 @@ public class MainGui {
     private void recreatePlaylistsList() {
         playlistsListPanel.removeAll();
 
-        playlistsFiltered.forEach(playlist -> {
+        playlistStore.getFilteredPlaylists().forEach(playlist -> {
             JCheckBox checkBox = new JCheckBox(playlist.getPlaylist().getName() + " (" + playlist.getPlaylist().getItems().getTotal() + " Lieder)" + (playlist.isFromConfig() ? " [playlist from config]" : ""));
             checkBox.setSelected(playlist.isChecked());
             checkBox.addActionListener(e -> {
@@ -602,8 +577,10 @@ public class MainGui {
     }
 
     private void updateSelectAllCheckbox() {
+        var playlistsFiltered = playlistStore.getFilteredPlaylists();
         int selectedCount = (int) playlistsFiltered.stream().filter(PlaylistModel::isChecked).count();
         selectAllCheckbox.setText(selectedCount + " von " + playlistsFiltered.size() + " ausgew\u00e4hlt");
+
         if (selectedCount == 0) {
             selectAllCheckbox.setSelected(false);
             selectAllCheckbox.setHalfSelected(false);
@@ -822,8 +799,8 @@ public class MainGui {
             badges.add(usedTrack.from().getPlaylist().getName());
         }
 
-        for (PlaylistModel playlist : playlists) {
-            if (!playlist.isChecked() || playlist.getTracks() == null) {
+        for (PlaylistModel playlist : playlistStore.getSelectedPlaylists()) {
+            if (playlist.getTracks() == null) {
                 continue;
             }
             if (usedTrack != null && usedTrack.from().getPlaylist().getId().equals(playlist.getPlaylist().getId())) {
