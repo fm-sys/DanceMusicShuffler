@@ -497,7 +497,7 @@ public class MainGui {
                 label.setForeground(Color.GRAY);
             }
             b.add(label);
-            ArrayList<String> badges = getBadges(item);
+            ArrayList<String> badges = shuffleAlgorithm.getBadges(item);
             queueTracks.add(new TrackWithBadges(item, badges));
             for (String badge : badges) {
                 b.add(Box.createHorizontalStrut(5));
@@ -732,7 +732,7 @@ public class MainGui {
                 StringBuilder label = new StringBuilder();
                 label.append(response.getCurrentlyPlaying().getName());
 
-                ArrayList<String> badges = getBadges(response.getCurrentlyPlaying());
+                ArrayList<String> badges = shuffleAlgorithm.getBadges(response.getCurrentlyPlaying());
 
                 if (response.getCurrentlyPlaying() instanceof Track track) {
                     if (track.getArtists() != null) {
@@ -759,7 +759,7 @@ public class MainGui {
                                 secondaryMonitorGui.update(coverImage, backgroundImage, track, badges);
 
                                 java.util.List<java.util.List<String>> nextPlaylists = new ArrayList<>();
-                                response.getQueue().forEach(item -> nextPlaylists.add(getBadges(item)));
+                                response.getQueue().forEach(item -> nextPlaylists.add(shuffleAlgorithm.getBadges(item)));
                                 secondaryMonitorGui.updateSidePanel(nextPlaylists.stream().limit(5).toList());
                             } catch (Exception exp) {
                                 exp.printStackTrace();
@@ -789,27 +789,5 @@ public class MainGui {
                 System.err.println("Caught Exception: " + ex.getMessage());
             }
         });
-    }
-
-    private ArrayList<String> getBadges(IPlaylistItem track) {
-        ArrayList<String> badges = new ArrayList<>();
-
-        UsedTrack usedTrack = shuffleAlgorithm.getUsedTrackIfExists(track);
-        if (usedTrack != null) {
-            badges.add(usedTrack.from().getPlaylist().getName());
-        }
-
-        for (PlaylistModel playlist : playlistStore.getSelectedPlaylists()) {
-            if (playlist.getTracks() == null) {
-                continue;
-            }
-            if (usedTrack != null && usedTrack.from().getPlaylist().getId().equals(playlist.getPlaylist().getId())) {
-                continue;
-            }
-            if (playlist.getTracks().stream().anyMatch(playlistTrack -> track.getId().equals(playlistTrack.getItem().getId()))) {
-                badges.add(playlist.getPlaylist().getName());
-            }
-        }
-        return badges;
     }
 }

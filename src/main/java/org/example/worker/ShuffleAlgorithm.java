@@ -32,7 +32,7 @@ public class ShuffleAlgorithm {
         this.playlistStore = playlistStore;
     }
 
-    public UsedTrack getUsedTrackIfExists(IPlaylistItem track) {
+    private UsedTrack getUsedTrackIfExists(IPlaylistItem track) {
         for (UsedTrack usedTrack : alreadyUsedTracks) {
             if (usedTrack.track().getUri().equals(track.getUri())) {
                 return usedTrack;
@@ -43,6 +43,28 @@ public class ShuffleAlgorithm {
 
     public boolean wasNotShuffled(IPlaylistItem track) {
         return getUsedTrackIfExists(track) == null;
+    }
+
+    public ArrayList<String> getBadges(IPlaylistItem track) {
+        ArrayList<String> badges = new ArrayList<>();
+
+        UsedTrack usedTrack = getUsedTrackIfExists(track);
+        if (usedTrack != null) {
+            badges.add(usedTrack.from().getPlaylist().getName());
+        }
+
+        for (PlaylistModel playlist : playlistStore.getSelectedPlaylists()) {
+            if (playlist.getTracks() == null) {
+                continue;
+            }
+            if (usedTrack != null && usedTrack.from().getPlaylist().getId().equals(playlist.getPlaylist().getId())) {
+                continue;
+            }
+            if (playlist.getTracks().stream().anyMatch(playlistTrack -> track.getId().equals(playlistTrack.getItem().getId()))) {
+                badges.add(playlist.getPlaylist().getName());
+            }
+        }
+        return badges;
     }
 
     private ArrayList<PlaylistModel> getAllowedPlaylists(boolean groupPlaylists) {
