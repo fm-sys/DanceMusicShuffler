@@ -40,6 +40,8 @@ public class PlaylistLoader {
                 continue;
             }
 
+            System.out.println("Loading tracks for playlist " + playlist.getPlaylist().getName() + "...");
+
             ArrayList<PlaylistTrack> playlistTracks = new ArrayList<>();
             int offset = 0;
 

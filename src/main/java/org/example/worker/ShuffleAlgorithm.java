@@ -1,6 +1,7 @@
 package org.example.worker;
 
 import org.apache.hc.core5.http.ParseException;
+import org.example.PlaylistStore;
 import org.example.api.Api;
 import org.example.models.PlaylistGroup;
 import org.example.models.PlaylistModel;
@@ -16,17 +17,19 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class ShuffleAlgorithm {
-    List<PlaylistModel> playlists;
-    List<PlaylistGroup> playlistGroups;
+    PlaylistStore playlistStore;
 
     final FixedSizeQueue<PlaylistModel> recentlyUsedPlaylists = new FixedSizeQueue<>(0);
     final List<UsedTrack> alreadyUsedTracks = new ArrayList<>();
 
+    /**
+     * whether the last shuffled song was an exclusive one
+     */
     boolean wasExclusive = false;
 
 
-    public ShuffleAlgorithm(List<PlaylistModel> playlists) {
-        this.playlists = playlists;
+    public ShuffleAlgorithm(PlaylistStore playlistStore) {
+        this.playlistStore = playlistStore;
     }
 
     public UsedTrack getUsedTrackIfExists(IPlaylistItem track) {
@@ -44,9 +47,10 @@ public class ShuffleAlgorithm {
 
     private ArrayList<PlaylistModel> getAllowedPlaylists(boolean groupPlaylists) {
         ArrayList<PlaylistModel> allowedPlaylists = new ArrayList<>();
+        List<PlaylistGroup> groups = groupPlaylists ? PlaylistGroup.createGroups(playlistStore.getSelectedPlaylists()) : null;
 
-        for (PlaylistModel playlist : playlists) {
-            if (playlist.isChecked() && (!wasExclusive || !playlist.isExclusive()) && !isRecentlyUsed(groupPlaylists, playlist)) {
+        for (PlaylistModel playlist : playlistStore.getSelectedPlaylists()) {
+            if ((!wasExclusive || !playlist.isExclusive()) && !isRecentlyUsed(playlist, groups)) {
                 allowedPlaylists.add(playlist);
             }
         }
@@ -54,8 +58,8 @@ public class ShuffleAlgorithm {
         return allowedPlaylists;
     }
 
-    private boolean isRecentlyUsed(boolean groupPlaylists, PlaylistModel playlist) {
-        if (!groupPlaylists) {
+    private boolean isRecentlyUsed(PlaylistModel playlist, List<PlaylistGroup> playlistGroups) {
+        if (playlistGroups == null) {
             return recentlyUsedPlaylists.contains(playlist);
         }
 
@@ -89,11 +93,6 @@ public class ShuffleAlgorithm {
     public boolean shuffle(int count, int cooldown, boolean groupPlaylists, String deviceId) {
         recentlyUsedPlaylists.setMaxSize(cooldown);
 
-        if (groupPlaylists) {
-            // rebuild groups (only selected playlists)
-            playlistGroups = PlaylistGroup.createGroups(playlists.stream().filter(PlaylistModel::isChecked).toList());
-        }
-
         if (count <= 0) {
             System.out.println("Shuffle finished");
             return true;
@@ -104,14 +103,17 @@ public class ShuffleAlgorithm {
             System.out.println("No allowed playlists available");
             return false;
         }
-        wasExclusive = chosenPlaylist.isExclusive();
-
+        if (chosenPlaylist.getTracks() == null) {
+            System.out.println("Playlist tracks not loaded: " + chosenPlaylist.getPlaylist().getName());
+            return false;
+        }
         List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getItem).filter(this::wasNotShuffled).toList();
         if (allowedTracks.isEmpty()) {
             System.out.println("No allowed tracks available in playlist: " + chosenPlaylist.getPlaylist().getName());
             return false;
         }
 
+        wasExclusive = chosenPlaylist.isExclusive();
         IPlaylistItem chosenTrack = allowedTracks.get(new Random().nextInt(allowedTracks.size()));
 
         recentlyUsedPlaylists.add(chosenPlaylist);

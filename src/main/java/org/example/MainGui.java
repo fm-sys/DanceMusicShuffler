@@ -42,7 +42,7 @@ public class MainGui {
     final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
 
     PlaylistStore playlistStore = new PlaylistStore();
-    ShuffleAlgorithm shuffleAlgorithm = new ShuffleAlgorithm(playlistStore.getPlaylists());
+    ShuffleAlgorithm shuffleAlgorithm = new ShuffleAlgorithm(playlistStore);
 
     JFrame frame;
 
