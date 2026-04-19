@@ -2,7 +2,7 @@ package org.example;
 
 import org.example.gui.*;
 import org.example.worker.PreventSleep;
-import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
+import se.michaelthelin.spotify.model_objects.interfaces.IArtist;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.swing.*;
@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("UnnecessaryUnicodeEscape")
 public class SecondaryMonitorGui {
 
     private final BackgroundPanel backgroundPanel;
@@ -176,7 +177,7 @@ public class SecondaryMonitorGui {
                 }
 
                 titleLabel.setText(track.getName());
-                artistLabel.setText(Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).collect(Collectors.joining(", ")));
+                artistLabel.setText(Arrays.stream(track.getArtists()).map(IArtist::getName).collect(Collectors.joining(", ")));
 
                 if (currentTrackId == null) {
                     currentTrackId = track.getId();

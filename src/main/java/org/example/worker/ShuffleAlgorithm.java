@@ -41,8 +41,8 @@ public class ShuffleAlgorithm {
         return null;
     }
 
-    public boolean wasNotShuffled(IPlaylistItem track) {
-        return getUsedTrackIfExists(track) == null;
+    public boolean wasShuffled(IPlaylistItem track) {
+        return getUsedTrackIfExists(track) != null;
     }
 
     public ArrayList<String> getBadges(IPlaylistItem track) {
@@ -129,7 +129,7 @@ public class ShuffleAlgorithm {
             System.out.println("Playlist tracks not loaded: " + chosenPlaylist.getPlaylist().getName());
             return false;
         }
-        List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getItem).filter(this::wasNotShuffled).toList();
+        List<IPlaylistItem> allowedTracks = chosenPlaylist.getTracks().stream().map(PlaylistTrack::getItem).filter(track -> !wasShuffled(track)).toList();
         if (allowedTracks.isEmpty()) {
             System.out.println("No allowed tracks available in playlist: " + chosenPlaylist.getPlaylist().getName());
             return false;
