@@ -14,6 +14,7 @@ import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
 import org.example.worker.SpotifyOcrIntegration;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.exceptions.detailed.ForbiddenException;
 import se.michaelthelin.spotify.model_objects.interfaces.IArtist;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
@@ -606,37 +607,34 @@ public class MainGui implements QueueView, NowPlayingView {
         buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
         buttonPanel.setBackground(Color.lightGray);
 
-        JButton backButton = new JButton("\u23EE");   // ⏮
-        backButton.setOpaque(false);
-        backButton.addActionListener(e -> Api.INSTANCE.skipUsersPlaybackToPreviousTrack().build().executeAsync().thenAccept(
-                response -> controller.secondaryMonitorGui.setPaused(false)
-        ));
-        buttonPanel.add(backButton);
-
-        JButton playButton = new JButton("\u25B6");   // ▶
+        JButton playButton = new JButton("\u25B6\u275A\u275A");
         playButton.setOpaque(false);
         buttonPanel.add(playButton);
         playButton.addActionListener(e -> Api.INSTANCE.startResumeUsersPlayback().device_id(activeDeviceId).build().executeAsync().whenComplete(
                 (res, ex) -> {
-                    Scheduler.waitForWebApiDelayAndRun(this::updatePlaybackState);
-
-                    if (ex != null) {
+                    if (ex instanceof ForbiddenException) {
+                        // play not possible when already playing, perform pause instead
+                        Api.INSTANCE.pauseUsersPlayback().build().executeAsync().whenComplete(
+                                (res2, ex2) -> controller.secondaryMonitorGui.setPaused(true)
+                        );
+                    } else if (ex != null) {
                         System.err.println("startResumeUsersPlayback: Caught Exception: " + ex.getMessage());
+                    } else {
+                        Scheduler.waitForWebApiDelayAndRun(this::updatePlaybackState);
                     }
                 }
         ));
 
-        JButton pauseButton = new JButton("\u23F8");  // ⏸
-        pauseButton.setOpaque(false);
-        buttonPanel.add(pauseButton);
-        pauseButton.addActionListener(e -> Api.INSTANCE.pauseUsersPlayback().build().executeAsync().whenComplete(
-                (res, ex) -> controller.secondaryMonitorGui.setPaused(true)
-        ));
-
-        JButton forwardButton = new JButton("\u23ED"); // ⏭
+        JButton forwardButton = new JButton("\u25B6\u25B6\u275A");
         forwardButton.setOpaque(false);
-        forwardButton.addActionListener(e -> Api.INSTANCE.skipUsersPlaybackToNextTrack().build().executeAsync().thenAccept(
-                response -> controller.secondaryMonitorGui.setPaused(false)
+        forwardButton.addActionListener(e -> Api.INSTANCE.skipUsersPlaybackToNextTrack().build().executeAsync().whenComplete(
+                (res, ex) -> {
+                    if (ex != null) {
+                        System.err.println("skipUsersPlaybackToNextTrack: Caught Exception: " + ex.getMessage());
+                    } else {
+                        controller.secondaryMonitorGui.setPaused(false);
+                    }
+                }
         ));
         buttonPanel.add(forwardButton);
 
