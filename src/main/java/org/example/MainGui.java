@@ -1,35 +1,25 @@
 package org.example;
 
-import com.google.gson.JsonArray;
-import org.apache.hc.core5.http.ParseException;
-import org.example.api.Api;
 import org.example.api.LocalSpotifyProvider;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
 import org.example.models.PlaylistModel;
 import org.example.models.TrackWithBadges;
-import org.example.util.PopupMenuOpenedListener;
 import org.example.util.Scheduler;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
 import org.example.worker.SpotifyOcrIntegration;
-import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
-import se.michaelthelin.spotify.exceptions.detailed.ForbiddenException;
 import se.michaelthelin.spotify.model_objects.interfaces.IArtist;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.swing.*;
-import javax.swing.event.PopupMenuEvent;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @SuppressWarnings("UnnecessaryUnicodeEscape")
 public class MainGui implements QueueView, NowPlayingView {
@@ -64,33 +54,11 @@ public class MainGui implements QueueView, NowPlayingView {
     Drawer drawer;
 
     JComboBox<DeviceDisplayable> devicesComboBox;
-    String activeDeviceId = null;
 
     private final ActionListener deviceChangeListener = (ActionEvent e) -> {
         DeviceDisplayable selected = (DeviceDisplayable) devicesComboBox.getSelectedItem();
         if (selected != null) {
-            if (selected.device().getIs_active()) {
-                System.out.println("Device "+ selected.device().getName() + " was already active.");
-                activeDeviceId = selected.device().getId(); // make sure that local id is in sync
-                return;
-            }
-
-            System.out.println("Selected device: " + selected.device().getName());
-            activeDeviceId = selected.device().getId();
-
-            devicesComboBox.setEnabled(false);
-            JsonArray array = new JsonArray();
-            array.add(selected.device().getId());
-            Api.INSTANCE.transferUsersPlayback(array).build().executeAsync().whenComplete(
-                    (res, ex) -> {
-                        if (ex == null) {
-                            System.out.println("Transferred playback to device: " + selected.device().getName());
-                        } else {
-                            System.err.println("Caught Exception: " + ex.getMessage());
-                        }
-                        Scheduler.waitForWebApiDelayAndRun(() -> devicesComboBox.setEnabled(true));
-                    }
-            );
+            controller.transferPlaybackToDevice(selected.device());
         }
     };
 
@@ -127,7 +95,7 @@ public class MainGui implements QueueView, NowPlayingView {
             @Override
             public void windowGainedFocus(WindowEvent e) {
                 controller.refreshPlayerState();
-                updatePlaybackState();
+                controller.updatePlaybackState();
             }
 
             @Override
@@ -314,7 +282,7 @@ public class MainGui implements QueueView, NowPlayingView {
             PlaylistLoader.loadPlaylistsAsync(controller.playlistStore.getSelectedPlaylists())
                     .thenAccept(success -> {
                         if (success) {
-                            controller.shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), activeDeviceId).thenAccept(result ->
+                            controller.shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), controller.activeDeviceId).thenAccept(result ->
                                     Scheduler.waitForWebApiDelayAndRun(this::restoreLoadAndShuffleButton));
                         } else {
                             JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
@@ -610,66 +578,33 @@ public class MainGui implements QueueView, NowPlayingView {
         JButton playButton = new JButton("\u25B6\u275A\u275A");
         playButton.setOpaque(false);
         buttonPanel.add(playButton);
-        playButton.addActionListener(e -> Api.INSTANCE.startResumeUsersPlayback().device_id(activeDeviceId).build().executeAsync().whenComplete(
-                (res, ex) -> {
-                    if (ex instanceof ForbiddenException) {
-                        // play not possible when already playing, perform pause instead
-                        Api.INSTANCE.pauseUsersPlayback().build().executeAsync().whenComplete(
-                                (res2, ex2) -> controller.secondaryMonitorGui.setPaused(true)
-                        );
-                    } else if (ex != null) {
-                        System.err.println("startResumeUsersPlayback: Caught Exception: " + ex.getMessage());
-                    } else {
-                        Scheduler.waitForWebApiDelayAndRun(this::updatePlaybackState);
-                    }
-                }
-        ));
+        playButton.addActionListener(e -> controller.playPauseClicked());
 
         JButton forwardButton = new JButton("\u25B6\u25B6\u275A");
         forwardButton.setOpaque(false);
-        forwardButton.addActionListener(e -> Api.INSTANCE.skipUsersPlaybackToNextTrack().build().executeAsync().whenComplete(
-                (res, ex) -> {
-                    if (ex != null) {
-                        System.err.println("skipUsersPlaybackToNextTrack: Caught Exception: " + ex.getMessage());
-                    } else {
-                        controller.secondaryMonitorGui.setPaused(false);
-                    }
-                }
-        ));
+        forwardButton.addActionListener(e -> controller.skipToNextClicked());
         buttonPanel.add(forwardButton);
 
         devicesComboBox = new JComboBox<>();
         devicesComboBox.setOpaque(false);
-
         devicesComboBox.setPrototypeDisplayValue(new DeviceDisplayable(new Device.Builder().setName("A device name").build()));
-
-        devicesComboBox.addPopupMenuListener(new PopupMenuOpenedListener() {
+        devicesComboBox.addMouseListener(new MouseAdapter() {
             @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                updateDevicesComboBox();
+            public void mousePressed(MouseEvent e) {
+                controller.refreshAvailablePlaybackDevices();
             }
         });
-
-        updateDevicesComboBox();
-
+        controller.refreshAvailablePlaybackDevices();
         buttonPanel.add(devicesComboBox);
+
         return buttonPanel;
     }
 
-    private void updateDevicesComboBox() {
-        java.util.List<DeviceDisplayable> devices = new ArrayList<>(fetchDevices());
-
+    @Override
+    public void updateDevicesComboBox(java.util.List<DeviceDisplayable> devices) {
         devicesComboBox.removeActionListener(deviceChangeListener);
 
         devicesComboBox.removeAllItems();
-        devices.sort((d1, d2) -> { // "Computers" first, then other devices
-            if (d1.device().getType().equals("Computer") && !d2.device().getType().equals("Computer")) {
-                return -1;
-            } else if (!d1.device().getType().equals("Computer") && d2.device().getType().equals("Computer")) {
-                return 1;
-            }
-            return 0;
-        });
         for (DeviceDisplayable device : devices) {
             devicesComboBox.addItem(device);
             if (device.device().getIs_active()) {
@@ -679,29 +614,12 @@ public class MainGui implements QueueView, NowPlayingView {
 
         devicesComboBox.addActionListener(deviceChangeListener);
         devicesComboBox.setSelectedItem(devicesComboBox.getSelectedItem());
-    }
 
-    private static java.util.List<DeviceDisplayable> fetchDevices() {
-        try {
-            Device[] devices = Api.INSTANCE.getUsersAvailableDevices().build().execute();
-            return Stream.of(devices).map(DeviceDisplayable::new).toList();
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            e.printStackTrace();
-            return new ArrayList<>();
+        if (devicesComboBox.isPopupVisible()) {
+            // trigger re-rendering of popup
+            devicesComboBox.hidePopup();
+            devicesComboBox.showPopup();
         }
-    }
-
-    private void updatePlaybackState() {
-        Api.INSTANCE.getUsersCurrentlyPlayingTrack().build().executeAsync().thenAccept(currentlyPlaying -> {
-            if (currentlyPlaying != null) {
-                controller.secondaryMonitorGui.setPaused(!currentlyPlaying.getIs_playing());
-                controller.secondaryMonitorGui.setProgress(currentlyPlaying.getProgress_ms(), currentlyPlaying.getItem().getDurationMs());
-            }
-        }).whenComplete((res, ex) -> {
-            if (ex != null) {
-                System.err.println("Caught Exception: " + ex.getMessage());
-            }
-        });
     }
 
     @Override
