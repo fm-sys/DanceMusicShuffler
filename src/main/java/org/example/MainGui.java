@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("UnnecessaryUnicodeEscape")
 public class MainGui implements QueueView, NowPlayingView {
 
+    public static final Color panelColor = new Color(25, 26, 28);
 
     final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
     final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
@@ -147,12 +148,16 @@ public class MainGui implements QueueView, NowPlayingView {
 
     private void createCenterOptionsPanel() {
         JPanel centerPanel = new JPanel();
+        centerPanel.setBackground(panelColor);
+        centerPanel.putClientProperty( FlatClientProperties.STYLE, "arc: 32" );
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        frame.add(centerPanel, BorderLayout.CENTER);
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        frame.add(AlignHelper.pad(centerPanel, new Insets(0,0,8,0)), BorderLayout.CENTER);
 
         centerPanel.add(Box.createVerticalGlue());
 
         JPanel labeledPanelOptions = new JPanel();
+        labeledPanelOptions.setBackground(panelColor);
         labeledPanelOptions.setLayout(new BoxLayout(labeledPanelOptions, BoxLayout.Y_AXIS));
         labeledPanelOptions.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Options"),
@@ -202,6 +207,7 @@ public class MainGui implements QueueView, NowPlayingView {
         centerPanel.add(Box.createVerticalStrut(10));
 
         JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2, 10, 0));
+        labeledPanelConfig.setBackground(panelColor);
         labeledPanelConfig.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Load/Store Configuration"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -230,6 +236,7 @@ public class MainGui implements QueueView, NowPlayingView {
         centerPanel.add(Box.createVerticalStrut(10));
 
         JPanel labeledPanelMonitor = new JPanel(new GridLayout(0, 1));
+        labeledPanelMonitor.setBackground(panelColor);
         labeledPanelMonitor.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Secondary Monitor"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -266,6 +273,7 @@ public class MainGui implements QueueView, NowPlayingView {
         centerPanel.add(Box.createVerticalStrut(10));
 
         loadAndShuffleButton = new JButton("Load Playlists and Shuffle");
+        loadAndShuffleButton.putClientProperty( FlatClientProperties.STYLE, "arc: 16" );
         loadAndShuffleButton.addActionListener(e -> {
             if (controller.playlistStore.getSelectedPlaylists().isEmpty()) {
                 JOptionPane.showMessageDialog(frame, "Please select at least one playlist to shuffle.");
@@ -293,6 +301,8 @@ public class MainGui implements QueueView, NowPlayingView {
                     });
         });
         JPanel expandedButtonPanel = new JPanel(new GridLayout(0, 1));
+        expandedButtonPanel.setBorder(BorderFactory.createEmptyBorder(0, 2, 2, 2));
+        expandedButtonPanel.setBackground(panelColor);
         expandedButtonPanel.setPreferredSize(new Dimension(0, 50));
         expandedButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         expandedButtonPanel.add(loadAndShuffleButton);
@@ -405,7 +415,7 @@ public class MainGui implements QueueView, NowPlayingView {
     private void createQueueList() {
 
         JPanel outerPanel = new JPanel();
-        outerPanel.setBackground(Color.black);
+        outerPanel.setBackground(panelColor);
         outerPanel.putClientProperty( FlatClientProperties.STYLE, "arc: 32" );
         outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
         outerPanel.add(Box.createVerticalStrut(5));
@@ -431,11 +441,11 @@ public class MainGui implements QueueView, NowPlayingView {
 
         queueListPanel = new JPanel();
         queueListPanel.setLayout(new BoxLayout(queueListPanel, BoxLayout.Y_AXIS));
-        queueListPanel.setBackground(Color.black);
+        queueListPanel.setBackground(panelColor);
 
         JScrollPane scrollPane = new JScrollPane(queueListPanel);
         scrollPane.setBorder(new FlatEmptyBorder());
-        scrollPane.getVerticalScrollBar().setBackground(Color.black);
+        scrollPane.getVerticalScrollBar().setBackground(panelColor);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -480,7 +490,7 @@ public class MainGui implements QueueView, NowPlayingView {
 
         JPanel outerPanel = new JPanel();
         outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
-        outerPanel.setBackground(Color.black);
+        outerPanel.setBackground(panelColor);
         outerPanel.putClientProperty( FlatClientProperties.STYLE, "arc: 32" );
 
         playlistsFilterTextField = new FlatTextField();
@@ -507,13 +517,13 @@ public class MainGui implements QueueView, NowPlayingView {
 
         playlistsListPanel = new JPanel();
         playlistsListPanel.setLayout(new BoxLayout(playlistsListPanel, BoxLayout.Y_AXIS));
-        playlistsListPanel.setBackground(Color.black);
+        playlistsListPanel.setBackground(panelColor);
 
         recreatePlaylistsList();
 
         JScrollPane scrollPane = new JScrollPane(playlistsListPanel);
         scrollPane.setBorder(new FlatEmptyBorder());
-        scrollPane.getVerticalScrollBar().setBackground(Color.black);
+        scrollPane.getVerticalScrollBar().setBackground(panelColor);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
