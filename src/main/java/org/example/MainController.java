@@ -105,11 +105,24 @@ public class MainController {
     }
 
     public void skipToNextClicked() {
-        Api.INSTANCE.skipUsersPlaybackToNextTrack().build().executeAsync().whenComplete((res, ex) -> {
+        Api.INSTANCE.skipUsersPlaybackToNextTrack().device_id(activeDeviceId).build().executeAsync().whenComplete((res, ex) -> {
             if (ex != null) {
                 System.err.println("skipUsersPlaybackToNextTrack: Caught Exception: " + ex.getMessage());
             } else {
                 secondaryMonitorGui.setPaused(false);
+                Scheduler.waitForWebApiDelayAndRun(this::refreshPlayerState);
+            }
+        });
+    }
+
+    public void restartCurrentClicked() {
+        Api.INSTANCE.seekToPositionInCurrentlyPlayingTrack(0).device_id(activeDeviceId).build().executeAsync().whenComplete((res, ex) -> {
+            if (ex != null) {
+                System.err.println("seekToPositionInCurrentlyPlayingTrack: Caught Exception: " + ex.getMessage());
+            } else {
+                secondaryMonitorGui.setPaused(false);
+                secondaryMonitorGui.resetProgressToZero();
+                Api.INSTANCE.startResumeUsersPlayback().device_id(activeDeviceId).build().executeAsync();
             }
         });
     }

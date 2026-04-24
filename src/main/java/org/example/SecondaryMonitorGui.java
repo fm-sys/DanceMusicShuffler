@@ -263,6 +263,10 @@ public class SecondaryMonitorGui {
         this.duration = durationMs;
     }
 
+    public void resetProgressToZero() {
+        this.startTimestamp = System.currentTimeMillis();
+    }
+
     public float getProgress() {
         return progressBar.getProgress();
     }

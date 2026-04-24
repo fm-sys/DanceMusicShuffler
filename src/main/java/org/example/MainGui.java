@@ -582,8 +582,13 @@ public class MainGui implements QueueView, NowPlayingView {
     private JPanel createPlaybackControlButtons() {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        buttonPanel.setBackground(Color.lightGray);
         buttonPanel.setBackground(Color.black);
+
+        JButton restartButton = new JButton("\u275A\u25C0");
+        restartButton.setOpaque(false);
+        restartButton.setToolTipText("Restart the current song");
+        restartButton.addActionListener(e -> controller.restartCurrentClicked());
+        buttonPanel.add(restartButton);
 
         JButton playButton = new JButton("\u25B6\u275A\u275A");
         playButton.setOpaque(false);
