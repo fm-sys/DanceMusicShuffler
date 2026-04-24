@@ -8,13 +8,18 @@ import se.michaelthelin.spotify.model_objects.specification.Track;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.font.TextAttribute;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("UnnecessaryUnicodeEscape")
 public class SecondaryMonitorGui {
+
+    private static final Map<TextAttribute, Float> FONT_BADGE_WEIGHT = Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_DEMIBOLD);
 
     private final BackgroundPanel backgroundPanel;
 
@@ -74,14 +79,14 @@ public class SecondaryMonitorGui {
         coverPanel.add(Box.createVerticalStrut(50));
 
         titleLabel = new JLabel("Song Title");
-        titleLabel.setFont(titleLabel.getFont().deriveFont(48.0f));
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 48.0f));
         titleLabel.setForeground(Color.WHITE);
         coverPanel.add(AlignHelper.center(titleLabel));
 
         coverPanel.add(Box.createVerticalStrut(10));
 
         artistLabel = new JLabel("Artist");
-        artistLabel.setFont(artistLabel.getFont().deriveFont(Font.ITALIC).deriveFont(24.0f));
+        artistLabel.setFont(artistLabel.getFont().deriveFont(Font.ITALIC,24.0f));
         artistLabel.setForeground(new Color(255, 255, 255, 192));
         coverPanel.add(AlignHelper.center(artistLabel));
 
@@ -192,7 +197,7 @@ public class SecondaryMonitorGui {
                 for (String badge : badges) {
                     BadgeLabel badgeLabel = new BadgeLabel(badge);
                     badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
-                    badgeLabel.setFont(badgeLabel.getFont().deriveFont(36.0f));
+                    badgeLabel.setFont(badgeLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(36.0f));
                     badgesPanel.add(badgeLabel);
                 }
 
@@ -212,7 +217,7 @@ public class SecondaryMonitorGui {
             sidePanel.add(Box.createVerticalGlue());
 
             JLabel label = new JLabel("N\u00e4chste T\u00e4nze");
-            label.setFont(titleLabel.getFont().deriveFont(36.0f));
+            label.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 36.0f));
             label.setForeground(Color.WHITE);
             sidePanel.add(AlignHelper.center(label));
 
@@ -224,13 +229,13 @@ public class SecondaryMonitorGui {
 
                 BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
                 badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
-                badgeLabel.setFont(badgeLabel.getFont().deriveFont(24.0f));
+                badgeLabel.setFont(badgeLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(24.0f));
                 b.add(badgeLabel);
 
                 if (badge.size() > 1) {
                     JLabel moreLabel = new JLabel(" + " + (badge.size() - 1));
                     moreLabel.setForeground(Color.WHITE);
-                    moreLabel.setFont(moreLabel.getFont().deriveFont(24.0f));
+                    moreLabel.setFont(moreLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(24.0f));
                     b.add(moreLabel);
                 }
 

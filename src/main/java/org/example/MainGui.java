@@ -1,5 +1,10 @@
 package org.example;
 
+import com.formdev.flatlaf.FlatClientProperties;
+import com.formdev.flatlaf.extras.components.FlatTextField;
+import com.formdev.flatlaf.extras.components.FlatTriStateCheckBox;
+import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.formdev.flatlaf.ui.FlatEmptyBorder;
 import org.example.api.LocalSpotifyProvider;
 import org.example.gui.*;
 import org.example.models.DeviceDisplayable;
@@ -32,8 +37,8 @@ public class MainGui implements QueueView, NowPlayingView {
 
     JFrame frame;
 
-    TristateCheckBox selectAllCheckbox;
-    HintTextField playlistsFilterTextField;
+    FlatTriStateCheckBox selectAllCheckbox;
+    FlatTextField playlistsFilterTextField;
     JPanel playlistsListPanel;
 
     JPanel queueListPanel;
@@ -64,14 +69,6 @@ public class MainGui implements QueueView, NowPlayingView {
 
     public MainGui(Collection<PlaylistSimplified> lists) {
         controller.playlistStore.addPlaylists(lists.stream().map(PlaylistModel::new).toList());
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                UnsupportedLookAndFeelException e) {
-            System.err.println("Couldn't set system look and feel");
-            e.printStackTrace();
-        }
 
         frame = new JFrame();
         frame.setLayout(new BorderLayout());
@@ -139,8 +136,8 @@ public class MainGui implements QueueView, NowPlayingView {
         if (icon != null) {
             frame.setIconImage(new ImageIcon(icon).getImage());
         }
-        frame.setMinimumSize(new Dimension(600, 300));
-        frame.setSize(new Dimension(1000, 600));
+        frame.setMinimumSize(new Dimension(600, 675));
+        frame.setSize(new Dimension(1000, 675));
         frame.setLocationByPlatform(true);
         frame.setVisible(true);
         loadAndShuffleButton.requestFocusInWindow();
@@ -151,7 +148,6 @@ public class MainGui implements QueueView, NowPlayingView {
     private void createCenterOptionsPanel() {
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         frame.add(centerPanel, BorderLayout.CENTER);
 
         centerPanel.add(Box.createVerticalGlue());
@@ -169,7 +165,7 @@ public class MainGui implements QueueView, NowPlayingView {
 
         songNumberSpinner = new JSpinner(new SpinnerNumberModel(10, 0, Integer.MAX_VALUE, 1));
         songNumberSpinner.setMaximumSize(new Dimension(songNumberSpinner.getPreferredSize().width, songNumberSpinner.getPreferredSize().height));
-        labeledPanelOptions.add(AlignHelper.left(songNumberSpinner));
+        labeledPanelOptions.add(AlignHelper.pad(AlignHelper.left(songNumberSpinner), new Insets(4, 0, 4, 0)));
 
         labeledPanelOptions.add(Box.createVerticalStrut(10));
 
@@ -178,7 +174,7 @@ public class MainGui implements QueueView, NowPlayingView {
 
         cooldownSpinner = new JSpinner(new SpinnerNumberModel(3, 0, Integer.MAX_VALUE, 1));
         cooldownSpinner.setMaximumSize(new Dimension(cooldownSpinner.getPreferredSize().width, cooldownSpinner.getPreferredSize().height));
-        labeledPanelOptions.add(AlignHelper.left(cooldownSpinner));
+        labeledPanelOptions.add(AlignHelper.pad(AlignHelper.left(cooldownSpinner), new Insets(4, 0, 4, 0)));
 
         groupPlaylistsCheckbox = new JCheckBox("Group playlists based on names");
         groupPlaylistsCheckbox.setSelected(false);
@@ -187,17 +183,17 @@ public class MainGui implements QueueView, NowPlayingView {
 
         labeledPanelOptions.add(Box.createVerticalStrut(10));
 
-        JLabel exclusiveLabel = new JLabel("These playlists are not allowed to be played directly after each other:");
+        JLabel exclusiveLabel = new JLabel("Playlists that may not be played directly after each other:");
         labeledPanelOptions.add(AlignHelper.left(exclusiveLabel));
 
         JButton exclusiveButton = new JButton("Select exclusive playlists");
         exclusiveButton.addActionListener(e -> showExclusivePoolDialog());
-        labeledPanelOptions.add(AlignHelper.left(exclusiveButton));
+        labeledPanelOptions.add(AlignHelper.pad(AlignHelper.left(exclusiveButton), new Insets(4, 0, 4, 0)));
 
         labeledPanelOptions.add(Box.createVerticalStrut(10));
 
         JLabel weightsLabel = new JLabel("Configure how often a playlists is chosen:");
-        labeledPanelOptions.add(AlignHelper.left(weightsLabel));
+        labeledPanelOptions.add(AlignHelper.pad(AlignHelper.left(weightsLabel), new Insets(4, 0, 4, 0)));
 
         JButton weightsButton = new JButton("Adjust weights");
         weightsButton.addActionListener(e -> showWeightsDialog());
@@ -205,7 +201,7 @@ public class MainGui implements QueueView, NowPlayingView {
 
         centerPanel.add(Box.createVerticalStrut(10));
 
-        JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2));
+        JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2, 10, 0));
         labeledPanelConfig.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Load/Store Configuration"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
@@ -227,7 +223,7 @@ public class MainGui implements QueueView, NowPlayingView {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(controller.playlistStore, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getTextWithoutHint(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
+            PersistentPreferences.store(controller.playlistStore, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getText(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
         });
         labeledPanelConfig.add(storeButton);
 
@@ -300,6 +296,7 @@ public class MainGui implements QueueView, NowPlayingView {
         expandedButtonPanel.setPreferredSize(new Dimension(0, 50));
         expandedButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         expandedButtonPanel.add(loadAndShuffleButton);
+        frame.getRootPane().setDefaultButton(loadAndShuffleButton);
         centerPanel.add(expandedButtonPanel);
 
         centerPanel.add(Box.createVerticalGlue());
@@ -408,7 +405,10 @@ public class MainGui implements QueueView, NowPlayingView {
     private void createQueueList() {
 
         JPanel outerPanel = new JPanel();
+        outerPanel.setBackground(Color.black);
+        outerPanel.putClientProperty( FlatClientProperties.STYLE, "arc: 32" );
         outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+        outerPanel.add(Box.createVerticalStrut(5));
 
         JLabel queueLabel = new JLabel("Queue");
         queueLabel.setFont(queueLabel.getFont().deriveFont(Font.BOLD));
@@ -427,18 +427,23 @@ public class MainGui implements QueueView, NowPlayingView {
             outerPanel.add(AlignHelper.center(ocrOverlayCheckbox));
         }
 
+        outerPanel.add(Box.createVerticalStrut(5));
+
         queueListPanel = new JPanel();
         queueListPanel.setLayout(new BoxLayout(queueListPanel, BoxLayout.Y_AXIS));
+        queueListPanel.setBackground(Color.black);
 
         JScrollPane scrollPane = new JScrollPane(queueListPanel);
+        scrollPane.setBorder(new FlatEmptyBorder());
+        scrollPane.getVerticalScrollBar().setBackground(Color.black);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        outerPanel.add(scrollPane);
+        outerPanel.add(AlignHelper.pad(scrollPane, new Insets(8, 8, 8, 0)));
 
         sidePanels[1] = outerPanel;
-        frame.add(outerPanel, BorderLayout.LINE_END);
+        frame.add(AlignHelper.pad(outerPanel, new Insets(0,8,8,8)), BorderLayout.LINE_END);
 
     }
 
@@ -475,41 +480,48 @@ public class MainGui implements QueueView, NowPlayingView {
 
         JPanel outerPanel = new JPanel();
         outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
+        outerPanel.setBackground(Color.black);
+        outerPanel.putClientProperty( FlatClientProperties.STYLE, "arc: 32" );
 
-        playlistsFilterTextField = new HintTextField("Filter playlists by title/description/owner");
+        playlistsFilterTextField = new FlatTextField();
+        playlistsFilterTextField.setPlaceholderText("Filter playlists by title, description or owner...");
+        playlistsFilterTextField.setLeadingIcon(new FlatSearchIcon());
         playlistsFilterTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, playlistsFilterTextField.getPreferredSize().height));
         playlistsFilterTextField.addCaretListener(e -> {
-            if (!controller.playlistStore.setFilterText(playlistsFilterTextField.getTextWithoutHint())) {
+            if (!controller.playlistStore.setFilterText(playlistsFilterTextField.getText())) {
                 return; //Text hasn't changed
             }
             recreatePlaylistsList();
         });
-        outerPanel.add(playlistsFilterTextField);
+        outerPanel.add(AlignHelper.pad(playlistsFilterTextField, new Insets(4, 4, 4, 4)));
 
-        selectAllCheckbox = new TristateCheckBox();
+        selectAllCheckbox = new FlatTriStateCheckBox();
+        selectAllCheckbox.setAllowIndeterminate(false);
         selectAllCheckbox.addActionListener(e -> {
             boolean isSelected = selectAllCheckbox.isSelected();
             controller.playlistStore.getFilteredPlaylists().forEach(playlist -> playlist.setChecked(isSelected));
             recreatePlaylistsList();
         });
 
-
-        outerPanel.add(AlignHelper.left(selectAllCheckbox));
+        outerPanel.add(AlignHelper.pad(AlignHelper.left(selectAllCheckbox), new Insets(0, 8, 8, 8)));
 
         playlistsListPanel = new JPanel();
         playlistsListPanel.setLayout(new BoxLayout(playlistsListPanel, BoxLayout.Y_AXIS));
+        playlistsListPanel.setBackground(Color.black);
 
         recreatePlaylistsList();
 
         JScrollPane scrollPane = new JScrollPane(playlistsListPanel);
+        scrollPane.setBorder(new FlatEmptyBorder());
+        scrollPane.getVerticalScrollBar().setBackground(Color.black);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        outerPanel.add(scrollPane);
+        outerPanel.add(AlignHelper.pad(scrollPane, new Insets(8, 8, 8, 0)));
 
         sidePanels[0] = outerPanel;
-        frame.add(leftHelperPanel, BorderLayout.LINE_START);
+        frame.add(AlignHelper.pad(leftHelperPanel, new Insets(0,8,8,8)), BorderLayout.LINE_START);
         leftHelperPanel.setLayout(new BorderLayout());
         leftHelperPanel.add(outerPanel, BorderLayout.CENTER);
 
@@ -541,14 +553,11 @@ public class MainGui implements QueueView, NowPlayingView {
         selectAllCheckbox.setText(selectedCount + " von " + playlistsFiltered.size() + " ausgew\u00e4hlt");
 
         if (selectedCount == 0) {
-            selectAllCheckbox.setSelected(false);
-            selectAllCheckbox.setHalfSelected(false);
+            selectAllCheckbox.setState(FlatTriStateCheckBox.State.UNSELECTED);
         } else if (selectedCount != playlistsFiltered.size()) {
-            selectAllCheckbox.setSelected(false);
-            selectAllCheckbox.setHalfSelected(true);
+            selectAllCheckbox.setState(FlatTriStateCheckBox.State.INDETERMINATE);
         } else {
-            selectAllCheckbox.setSelected(true);
-            selectAllCheckbox.setHalfSelected(false);
+            selectAllCheckbox.setState(FlatTriStateCheckBox.State.SELECTED);
             selectAllCheckbox.setText("Alle ausgew\u00e4hlt");
         }
     }
@@ -557,7 +566,7 @@ public class MainGui implements QueueView, NowPlayingView {
         nowPlayingPanel = new JPanel();
         nowPlayingPanel.setLayout(new BoxLayout(nowPlayingPanel, BoxLayout.X_AXIS));
         nowPlayingPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
-        nowPlayingPanel.setBackground(Color.lightGray);
+        nowPlayingPanel.setBackground(Color.black);
 
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BorderLayout());
@@ -574,19 +583,23 @@ public class MainGui implements QueueView, NowPlayingView {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 10));
         buttonPanel.setBackground(Color.lightGray);
+        buttonPanel.setBackground(Color.black);
 
         JButton playButton = new JButton("\u25B6\u275A\u275A");
         playButton.setOpaque(false);
+        playButton.setToolTipText("Toggle play/pause");
         buttonPanel.add(playButton);
         playButton.addActionListener(e -> controller.playPauseClicked());
 
         JButton forwardButton = new JButton("\u25B6\u25B6\u275A");
         forwardButton.setOpaque(false);
+        forwardButton.setToolTipText("Skip to the next song");
         forwardButton.addActionListener(e -> controller.skipToNextClicked());
         buttonPanel.add(forwardButton);
 
         devicesComboBox = new JComboBox<>();
         devicesComboBox.setOpaque(false);
+        devicesComboBox.setToolTipText("Choose playback device");
         devicesComboBox.setPrototypeDisplayValue(new DeviceDisplayable(new Device.Builder().setName("A device name").build()));
         devicesComboBox.addMouseListener(new MouseAdapter() {
             @Override

@@ -20,7 +20,6 @@ public class Drawer {
 
         // Drawer panel
         drawerPanel = new JPanel(new BorderLayout());
-        drawerPanel.setBackground(Color.WHITE);
 
         // Glass pane for background dimming
         glassPane = new JPanel(null) {

@@ -11,8 +11,6 @@ public class SplashScreen {
     public SplashScreen() {
         splash = new JWindow();
         JPanel content = new JPanel(new BorderLayout());
-        content.setBackground(Color.WHITE);
-        content.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
 
         JLabel title = new JLabel("Dance Music Shuffler", JLabel.CENTER);
         title.setFont(new Font("SansSerif", Font.BOLD, 18));
