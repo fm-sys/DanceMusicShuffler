@@ -3,6 +3,7 @@ package org.example.api;
 import com.sun.jna.Native;
 import com.sun.jna.platform.win32.User32;
 import com.sun.jna.platform.win32.WinDef.HWND;
+import org.example.PlayerStore;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 
 public class LocalSpotifyWindows implements LocalSpotifyProvider.LocalSpotifyIntegration {
@@ -11,7 +12,7 @@ public class LocalSpotifyWindows implements LocalSpotifyProvider.LocalSpotifyInt
 
     public static void main(String[] args) {
         LocalSpotifyWindows spotifyWindowTitle = new LocalSpotifyWindows();
-        spotifyWindowTitle.initialize(null);
+        spotifyWindowTitle.initializeWithTrack(null);
 
         while (spotifyWindowTitle.spotifyWindow != null) {
             if (spotifyWindowTitle.titleHasChanged()) {
@@ -21,7 +22,16 @@ public class LocalSpotifyWindows implements LocalSpotifyProvider.LocalSpotifyInt
 
     }
 
-    public void initialize(IPlaylistItem currentTrack) {
+    @Override
+    public void initialize(PlayerStore playerStore) {
+        playerStore.subscribe(state -> {
+            if (!isInitialized()) {
+                initializeWithTrack(state.track());
+            }
+        });
+    }
+
+    public void initializeWithTrack(IPlaylistItem currentTrack) {
         // Enumerate all top-level windows
         User32.INSTANCE.EnumWindows((hWnd, arg1) -> {
             // Get the window title length
@@ -49,8 +59,9 @@ public class LocalSpotifyWindows implements LocalSpotifyProvider.LocalSpotifyInt
         return Native.toString(windowText).trim();
     }
 
+    @Override
     public boolean titleHasChanged() {
-        if (spotifyWindow == null) {
+        if (!isInitialized()) {
             return false;
         }
 
@@ -62,13 +73,7 @@ public class LocalSpotifyWindows implements LocalSpotifyProvider.LocalSpotifyInt
         return true;
     }
 
-    public boolean isPaused() {
-        if (lastWindowTitle == null) {
-            return false;
-        }
-        return lastWindowTitle.equals("Spotify Premium");
-    }
-
+    @Override
     public boolean isInitialized() {
         return spotifyWindow != null;
     }

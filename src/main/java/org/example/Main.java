@@ -1,17 +1,10 @@
 package org.example;
 
 import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.FlatLightLaf;
-import org.apache.hc.core5.http.ParseException;
 import org.example.api.Api;
-import org.example.api.LocalSpotifyProvider;
-import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
-import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 
-import java.io.IOException;
 import java.util.*;
 
 public class Main {
@@ -44,18 +37,9 @@ public class Main {
 
         SplashScreen splashScreen = new SplashScreen();
 
-        CurrentlyPlaying currentlyPlaying;
-        try {
-            currentlyPlaying = Api.INSTANCE.getUsersCurrentlyPlayingTrack().build().execute();
-        } catch (IOException | SpotifyWebApiException | ParseException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-        LocalSpotifyProvider.INSTANCE.initialize(currentlyPlaying != null ? currentlyPlaying.getItem() : null);
-
         getPlaylists(() -> {
             splashScreen.dispose();
-            new MainGui(playlists);
+            new MainCoordinator(playlists);
         });
     }
 

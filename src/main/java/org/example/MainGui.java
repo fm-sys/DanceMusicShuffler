@@ -7,7 +7,7 @@ import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.formdev.flatlaf.ui.FlatEmptyBorder;
 import org.example.api.LocalSpotifyProvider;
 import org.example.gui.*;
-import org.example.models.DeviceDisplayable;
+import org.example.models.PlaybackDevice;
 import org.example.models.PlaylistModel;
 import org.example.models.TrackWithBadges;
 import org.example.util.Scheduler;
@@ -15,15 +15,12 @@ import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
 import org.example.worker.SpotifyOcrIntegration;
 import se.michaelthelin.spotify.model_objects.interfaces.IArtist;
-import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
-import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("UnnecessaryUnicodeEscape")
@@ -34,7 +31,9 @@ public class MainGui implements QueueView, NowPlayingView {
     final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
     final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
 
-    final MainController controller = new MainController(this);
+    final MainCoordinator controller; // todo: remove, handling should happen through presenters
+    QueuePresenter queuePresenter;
+    NowPlayingPresenter nowPlayingPresenter;
 
     JFrame frame;
 
@@ -59,17 +58,19 @@ public class MainGui implements QueueView, NowPlayingView {
     JButton drawerButton = new JButton("\u2630");  // ☰
     Drawer drawer;
 
-    JComboBox<DeviceDisplayable> devicesComboBox;
+    JComboBox<PlaybackDevice> devicesComboBox;
 
     private final ActionListener deviceChangeListener = (ActionEvent e) -> {
-        DeviceDisplayable selected = (DeviceDisplayable) devicesComboBox.getSelectedItem();
+        PlaybackDevice selected = (PlaybackDevice) devicesComboBox.getSelectedItem();
         if (selected != null) {
-            controller.transferPlaybackToDevice(selected.device());
+            nowPlayingPresenter.onDeviceSelected(selected);
         }
     };
 
-    public MainGui(Collection<PlaylistSimplified> lists) {
-        controller.playlistStore.addPlaylists(lists.stream().map(PlaylistModel::new).toList());
+    public MainGui(QueuePresenter queuePresenter, NowPlayingPresenter nowPlayingPresenter, /*todo remove param*/ MainCoordinator mainCoordinator) {
+        this.queuePresenter = queuePresenter;
+        this.nowPlayingPresenter = nowPlayingPresenter;
+        this.controller = mainCoordinator;
 
         frame = new JFrame();
         frame.setLayout(new BorderLayout());
@@ -80,11 +81,11 @@ public class MainGui implements QueueView, NowPlayingView {
         createNowPlaying();
 
         new Timer(1000, evt -> {
-            if (LocalSpotifyProvider.INSTANCE.titleHasChanged() || (controller.secondaryMonitorGui.getProgress() == 1.0 && !controller.secondaryMonitorGui.isPaused())) {
-                if (LocalSpotifyProvider.INSTANCE.isInitialized()) {
-                    controller.secondaryMonitorGui.setPaused(LocalSpotifyProvider.INSTANCE.isPaused());
-                }
-                Scheduler.waitForWebApiDelayAndRun(controller::refreshPlayerState);
+            if (LocalSpotifyProvider.INSTANCE.titleHasChanged()) {
+                Scheduler.waitForWebApiDelayAndRun(nowPlayingPresenter::triggerPlayerRefresh);
+            } else if (controller.secondaryMonitorGui.getProgress() == 1.0 && !controller.secondaryMonitorGui.isPaused()) {
+                // Song is about to end, refresh player state to get the next song
+                Scheduler.waitForWebApiDelayAndRun(nowPlayingPresenter::triggerPlayerRefresh);
             }
         }).start();
 
@@ -92,8 +93,7 @@ public class MainGui implements QueueView, NowPlayingView {
         frame.addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowGainedFocus(WindowEvent e) {
-                controller.refreshPlayerState();
-                controller.updatePlaybackState();
+                nowPlayingPresenter.triggerPlayerRefresh();
             }
 
             @Override
@@ -286,7 +286,7 @@ public class MainGui implements QueueView, NowPlayingView {
             PlaylistLoader.loadPlaylistsAsync(controller.playlistStore.getSelectedPlaylists())
                     .thenAccept(success -> {
                         if (success) {
-                            controller.shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), controller.activeDeviceId).thenAccept(result ->
+                            controller.shuffleAlgorithm.shuffleAsync((int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), controller.playbackDevicesStore.getActiveDeviceId()).thenAccept(result ->
                                     Scheduler.waitForWebApiDelayAndRun(this::restoreLoadAndShuffleButton));
                         } else {
                             JOptionPane.showMessageDialog(frame, "Error loading playlists. Please try again.");
@@ -339,7 +339,7 @@ public class MainGui implements QueueView, NowPlayingView {
     private void restoreLoadAndShuffleButton() {
         loadAndShuffleButton.setEnabled(true);
         loadAndShuffleButton.setText("Load Playlists and Shuffle");
-        controller.refreshPlayerState();
+        nowPlayingPresenter.triggerPlayerRefresh();
     }
 
     private void showExclusivePoolDialog() {
@@ -586,7 +586,7 @@ public class MainGui implements QueueView, NowPlayingView {
         bottomPanel.add(nowPlayingPanel, BorderLayout.SOUTH);
 
         frame.add(bottomPanel, BorderLayout.PAGE_END);
-        controller.refreshPlayerState();
+        nowPlayingPresenter.triggerPlayerRefresh();
     }
 
     private JPanel createPlaybackControlButtons() {
@@ -597,45 +597,44 @@ public class MainGui implements QueueView, NowPlayingView {
         JButton restartButton = new JButton("\u275A\u25C0");
         restartButton.setOpaque(false);
         restartButton.setToolTipText("Restart the current song");
-        restartButton.addActionListener(e -> controller.restartCurrentClicked());
+        restartButton.addActionListener(e -> nowPlayingPresenter.onRestartClicked());
         buttonPanel.add(restartButton);
 
         JButton playButton = new JButton("\u25B6\u275A\u275A");
         playButton.setOpaque(false);
         playButton.setToolTipText("Toggle play/pause");
         buttonPanel.add(playButton);
-        playButton.addActionListener(e -> controller.playPauseClicked());
+        playButton.addActionListener(e -> nowPlayingPresenter.onPlayPauseClicked());
 
         JButton forwardButton = new JButton("\u25B6\u25B6\u275A");
         forwardButton.setOpaque(false);
         forwardButton.setToolTipText("Skip to the next song");
-        forwardButton.addActionListener(e -> controller.skipToNextClicked());
+        forwardButton.addActionListener(e -> nowPlayingPresenter.onSkipToNextClicked());
         buttonPanel.add(forwardButton);
 
         devicesComboBox = new JComboBox<>();
         devicesComboBox.setOpaque(false);
         devicesComboBox.setToolTipText("Choose playback device");
-        devicesComboBox.setPrototypeDisplayValue(new DeviceDisplayable(new Device.Builder().setName("A device name").build()));
+        devicesComboBox.setPrototypeDisplayValue(new PlaybackDevice("id", "A device name", false));
         devicesComboBox.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                controller.refreshAvailablePlaybackDevices();
+                nowPlayingPresenter.onDevicesComboBoxOpened();
             }
         });
-        controller.refreshAvailablePlaybackDevices();
         buttonPanel.add(devicesComboBox);
 
         return buttonPanel;
     }
 
     @Override
-    public void updateDevicesComboBox(java.util.List<DeviceDisplayable> devices) {
+    public void updateDevicesComboBox(java.util.List<PlaybackDevice> devices) {
         devicesComboBox.removeActionListener(deviceChangeListener);
 
         devicesComboBox.removeAllItems();
-        for (DeviceDisplayable device : devices) {
+        for (PlaybackDevice device : devices) {
             devicesComboBox.addItem(device);
-            if (device.device().getIs_active()) {
+            if (device.isActive()) {
                 devicesComboBox.setSelectedItem(device);
             }
         }

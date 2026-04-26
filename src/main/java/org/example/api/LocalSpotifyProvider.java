@@ -1,6 +1,6 @@
 package org.example.api;
 
-import se.michaelthelin.spotify.model_objects.IPlaylistItem;
+import org.example.PlayerStore;
 
 public class LocalSpotifyProvider {
 
@@ -15,11 +15,9 @@ public class LocalSpotifyProvider {
     }
 
     public interface LocalSpotifyIntegration {
-
         boolean titleHasChanged();
-        boolean isPaused();
         boolean isInitialized();
-        void initialize(IPlaylistItem currentTrack);
+        void initialize(PlayerStore playerStore);
     }
 
 }
