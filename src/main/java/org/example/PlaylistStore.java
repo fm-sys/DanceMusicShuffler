@@ -3,33 +3,23 @@ package org.example;
 import org.example.models.PlaylistModel;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class PlaylistStore {
-
-    private final ArrayList<PlaylistModel> playlists = new ArrayList<>();
+public class PlaylistStore extends AbstractStore<List<PlaylistModel>> {
     private String filterText = "";
 
-
     public void addPlaylist(PlaylistModel playlistModel) {
+        List<PlaylistModel> playlists = new ArrayList<>(get());
         playlists.add(playlistModel);
-    }
-
-    public void addPlaylists(Collection<PlaylistModel> playlistModels) {
-        playlists.addAll(playlistModels);
-    }
-
-    public List<PlaylistModel> getPlaylists() {
-        return Collections.unmodifiableList(playlists);
+        setState(Collections.unmodifiableList(playlists));
     }
 
     /**
      * Get a collection of all checked playlists.
      */
     public List<PlaylistModel> getSelectedPlaylists() {
-        return playlists.stream().filter(PlaylistModel::isChecked).toList();
+        return get().stream().filter(PlaylistModel::isChecked).toList();
     }
 
     /**
@@ -37,9 +27,9 @@ public class PlaylistStore {
      */
     public List<PlaylistModel> getFilteredPlaylists() {
         if  (filterText.isBlank()) {
-            return getPlaylists();
+            return get();
         }
-        return playlists.stream().filter(this::matchesFilter).toList();
+        return get().stream().filter(this::matchesFilter).toList();
     }
 
     private boolean matchesFilter(PlaylistModel playlist) {

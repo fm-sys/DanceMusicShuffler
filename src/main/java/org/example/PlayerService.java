@@ -192,7 +192,7 @@ public class PlayerService {
             return;
         }
 
-        playbackDevicesStore.setState(playbackDevicesStore.getDevices().stream()
+        playbackDevicesStore.setState(playbackDevicesStore.get().stream()
                 .map(d -> new PlaybackDevice(d.id(), d.name(), d.id().equals(device.id())))
                 .toList());
 

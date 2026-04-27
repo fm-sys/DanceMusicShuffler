@@ -38,20 +38,10 @@ public class MainCoordinator {
         LocalSpotifyProvider.INSTANCE.initialize(playerStore);
 
         // init data
-        playlistStore.addPlaylists(lists.stream().map(PlaylistModel::new).toList());
+        playlistStore.setState(lists.stream().map(PlaylistModel::new).toList());
         playerService.refreshAvailablePlaybackDevices();
         // playerService.refreshPlayerState();
 
     }
-
-
-
-
-
-
-
-
-
-
 
 }

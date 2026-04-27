@@ -28,7 +28,7 @@ public class PersistentPreferences {
     }
 
     public PersistentPreferences(PlaylistStore playlistStore, MainGuiParams params) {
-        this.playlists = playlistStore.getPlaylists().stream().filter(PlaylistModel::hasModifiedConfig).map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
+        this.playlists = playlistStore.get().stream().filter(PlaylistModel::hasModifiedConfig).map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
         this.count = params.count;
         this.cooldown = params.cooldown;
         this.groupPlaylists = params.groupPlaylists;
@@ -97,7 +97,7 @@ public class PersistentPreferences {
             // Enrich the playlists with the loaded preferences
             for (PersistentPlaylistModel persistentPlaylist : preferences.playlists) {
                 boolean found = false;
-                for (PlaylistModel playlist : playlistStore.getPlaylists()) {
+                for (PlaylistModel playlist : playlistStore.get()) {
                     if (playlist.getPlaylist().getId().equals(persistentPlaylist.id)) {
                         playlist.setChecked(persistentPlaylist.checked);
                         playlist.setExclusive(persistentPlaylist.exclusive);
