@@ -3,6 +3,7 @@ package org.example;
 import org.example.api.LocalSpotifyProvider;
 import org.example.models.PlaylistModel;
 import org.example.worker.ShuffleAlgorithm;
+import org.example.worker.SpotifyOcrIntegration;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 
 import java.util.Collection;
@@ -24,6 +25,10 @@ public class MainCoordinator {
     PlayerService playerService = new PlayerService(playerStore, playbackDevicesStore);
 
     ShuffleAlgorithm shuffleAlgorithm = new ShuffleAlgorithm(playlistStore);
+
+    final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow(playerStore, shuffleAlgorithm);
+    final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
+
 
     public MainCoordinator(Collection<PlaylistSimplified> lists) {
 

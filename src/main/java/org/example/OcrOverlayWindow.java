@@ -3,6 +3,7 @@ package org.example;
 import net.sourceforge.tess4j.Word;
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.example.models.TrackWithBadges;
+import org.example.worker.ShuffleAlgorithm;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
@@ -14,13 +15,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class OcrOverlayWindow extends JWindow {
-    private List<TrackWithBadges> queueTracks = new ArrayList<>();
+    private final PlayerStore playerStore;
+    private final ShuffleAlgorithm shuffleAlgorithm;
     private final List<OverlayItem> overlayItems = new ArrayList<>();
 
     JaroWinklerSimilarity similarity = new JaroWinklerSimilarity();
 
-    public OcrOverlayWindow() {
+    public OcrOverlayWindow(PlayerStore playerStore, ShuffleAlgorithm shuffleAlgorithm) {
         super();
+        this.playerStore = playerStore;
+        this.shuffleAlgorithm = shuffleAlgorithm;
         setAlwaysOnTop(true);
         setBackground(new Color(0, 0, 0, 0));
         add(new OverlayPanel());
@@ -36,6 +40,11 @@ public class OcrOverlayWindow extends JWindow {
         setBounds(x - 560, y, 500, height);
 
         overlayItems.clear();
+
+        List<TrackWithBadges> queueTracks = playerStore.get().queue().stream().map(item -> {
+            List<String> badges = shuffleAlgorithm.getBadges(item);
+            return new TrackWithBadges(item, badges, shuffleAlgorithm.wasShuffled(item));
+        }).toList();
 
         int queuePosition = 0;
         int mayFit = -1;
@@ -67,11 +76,6 @@ public class OcrOverlayWindow extends JWindow {
 
         repaint();
 
-    }
-
-    public void updateQueue(List<TrackWithBadges> queueTracks) {
-        this.queueTracks = queueTracks;
-        repaint();
     }
 
     private record OverlayItem(String text, int ypos) {

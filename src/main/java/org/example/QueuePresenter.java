@@ -4,7 +4,6 @@ import org.example.models.TrackWithBadges;
 import org.example.worker.ShuffleAlgorithm;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class QueuePresenter {
@@ -26,12 +25,10 @@ public class QueuePresenter {
     }
 
     public void update(PlayerState state) {
-        List<TrackWithBadges> queueTracks = new ArrayList<>();
-
-        state.queue().forEach(item -> {
+        List<TrackWithBadges> queueTracks = state.queue().stream().map(item -> {
             List<String> badges = shuffleAlgorithm.getBadges(item);
-            queueTracks.add(new TrackWithBadges(item, badges, shuffleAlgorithm.wasShuffled(item)));
-        });
+            return new TrackWithBadges(item, badges, shuffleAlgorithm.wasShuffled(item));
+        }).toList();
 
         SwingUtilities.invokeLater(() -> view.showQueue(queueTracks));
     }

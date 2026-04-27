@@ -13,7 +13,6 @@ import org.example.util.Scheduler;
 import org.example.util.TextChangedListener;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
-import org.example.worker.SpotifyOcrIntegration;
 import se.michaelthelin.spotify.model_objects.interfaces.IArtist;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
@@ -28,9 +27,6 @@ import java.util.stream.Collectors;
 public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
 
     public static final Color panelColor = new Color(25, 26, 28);
-
-    final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow();
-    final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
 
     final MainCoordinator controller; // todo: remove, handling should happen through presenters
     QueuePresenter queuePresenter;
@@ -416,14 +412,14 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
         queueLabel.setFont(queueLabel.getFont().deriveFont(Font.BOLD));
         outerPanel.add(AlignHelper.center(queueLabel));
 
-        if (spotifyOcrProcessor.isSupported()) {
+        if (controller.spotifyOcrProcessor.isSupported()) {
             JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify In-App Overlay (experimental)");
             ocrOverlayCheckbox.setSelected(false);
             ocrOverlayCheckbox.addActionListener(e -> {
                 if (ocrOverlayCheckbox.isSelected()) {
-                    spotifyOcrProcessor.start();
+                    controller.spotifyOcrProcessor.start();
                 } else {
-                    spotifyOcrProcessor.stop();
+                    controller.spotifyOcrProcessor.stop();
                 }
             });
             outerPanel.add(AlignHelper.center(ocrOverlayCheckbox));
