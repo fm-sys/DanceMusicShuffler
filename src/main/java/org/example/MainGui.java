@@ -212,7 +212,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
         loadButton.addActionListener(e -> {
             loadButton.setText("Loading...");
             loadButton.setEnabled(false);
-            PersistentPreferences.loadAsync(controller.playlistStore, controller.preferencesStore, "prefs.json");
+            PersistentPreferences.loadAsync(controller.playlistStore, controller.filterStore, controller.preferencesStore, "prefs.json");
         });
         labeledPanelConfig.add(loadButton);
 
@@ -222,7 +222,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(controller.playlistStore, controller.preferencesStore.get()/*(int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getText(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected()*/);
+            PersistentPreferences.store(controller.playlistStore, controller.filterStore, controller.preferencesStore.get()/*(int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getText(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected()*/);
         });
         labeledPanelConfig.add(storeButton);
 
@@ -310,7 +310,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
             songNumberSpinner.setValue(params.count());
             cooldownSpinner.setValue(params.cooldown());
             groupPlaylistsCheckbox.setSelected(params.groupPlaylists());
-            playlistsFilterTextField.setText(controller.playlistStore.filterText().get());
+            playlistsFilterTextField.setText(controller.filterStore.get());
             secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel());
 //            controller.secondaryMonitorGui.setSidePanelVisible(params.showSidePanel());
             secondaryGuiCoverCheckbox.setSelected(params.showSidePanel());
@@ -320,7 +320,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
         } else {
             int result = JOptionPane.showConfirmDialog(frame, "No user configuration stored, load default prefs?", "Load defaults", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (result == JOptionPane.YES_OPTION) {
-                PersistentPreferences.loadAsync(controller.playlistStore, controller.preferencesStore, "default-prefs.json");
+                PersistentPreferences.loadAsync(controller.playlistStore, controller.filterStore, controller.preferencesStore, "default-prefs.json");
                 return;
             }
         }

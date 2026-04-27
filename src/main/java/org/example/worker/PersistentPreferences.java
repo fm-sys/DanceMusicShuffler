@@ -2,6 +2,7 @@ package org.example.worker;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.FilterStore;
 import org.example.PlaylistStore;
 import org.example.PreferenceParams;
 import org.example.PreferencesStore;
@@ -28,12 +29,12 @@ public class PersistentPreferences {
         // Default constructor for Jackson
     }
 
-    public PersistentPreferences(PlaylistStore playlistStore, PreferenceParams params) {
+    public PersistentPreferences(PlaylistStore playlistStore, FilterStore filterStore, PreferenceParams params) {
         this.playlists = playlistStore.get().stream().filter(PlaylistModel::hasModifiedConfig).map(pl -> new PersistentPlaylistModel(pl.getPlaylist().getId(), pl.isChecked(), pl.isExclusive(), pl.getWeight())).toList();
         this.count = params.count();
         this.cooldown = params.cooldown();
         this.groupPlaylists = params.groupPlaylists();
-        this.searchString = playlistStore.filterText().get();
+        this.searchString = filterStore.get();
         this.showSidePanel = params.showSidePanel();
         this.showCover = params.showCover();
         this.colorBackground = params.colorBackground();
@@ -68,18 +69,18 @@ public class PersistentPreferences {
      *
      * @param playlistStore The playlist store object to be enriched.
      */
-    public static void loadAsync(PlaylistStore playlistStore, PreferencesStore preferencesStore, String fileName) {
-        CompletableFuture.runAsync(() -> load(playlistStore, preferencesStore, fileName));
+    public static void loadAsync(PlaylistStore playlistStore, FilterStore filterStore, PreferencesStore preferencesStore, String fileName) {
+        CompletableFuture.runAsync(() -> load(playlistStore, filterStore, preferencesStore, fileName));
     }
 
-    private static void load(PlaylistStore playlistStore, PreferencesStore preferencesStore, String fileName) {
+    private static void load(PlaylistStore playlistStore, FilterStore filterStore, PreferencesStore preferencesStore, String fileName) {
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
             // Read JSON from a file and convert it to a Java object
             PersistentPreferences preferences = objectMapper.readValue(new File(fileName), PersistentPreferences.class);
 
-            playlistStore.filterText().setState(preferences.searchString);
+            filterStore.setState(preferences.searchString);
 
             // Enrich the playlists with the loaded preferences
             for (PersistentPlaylistModel persistentPlaylist : preferences.playlists) {
@@ -103,8 +104,8 @@ public class PersistentPreferences {
         }
     }
 
-    public static void store(PlaylistStore playlistStore, PreferenceParams params) {
-        PersistentPreferences preferences = new PersistentPreferences(playlistStore, params);
+    public static void store(PlaylistStore playlistStore, FilterStore filterStore, PreferenceParams params) {
+        PersistentPreferences preferences = new PersistentPreferences(playlistStore, filterStore, params);
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {

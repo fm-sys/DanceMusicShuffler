@@ -17,6 +17,7 @@ public class MainCoordinator {
 
     PreferencesStore preferencesStore = new PreferencesStore();
     PlaylistStore playlistStore = new PlaylistStore();
+    FilterStore filterStore = new FilterStore();
     PlayerStore playerStore = new PlayerStore();
     PlaybackDevicesStore playbackDevicesStore = new PlaybackDevicesStore();
 
@@ -29,7 +30,7 @@ public class MainCoordinator {
         // create presenters
         queuePresenter = new QueuePresenter(playerStore, shuffleAlgorithm);
         nowPlayingPresenter = new NowPlayingPresenter(playerService, shuffleAlgorithm);
-        playlistsPresenter =  new PlaylistsPresenter(playlistStore);
+        playlistsPresenter =  new PlaylistsPresenter(playlistStore, filterStore);
 
         // create GUI
         secondaryMonitorGui = new SecondaryMonitorGui(playerStore, preferencesStore, shuffleAlgorithm);
