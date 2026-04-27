@@ -1,5 +1,10 @@
 package org.example;
 
+import java.util.List;
+
 public class PlayerStore extends AbstractStore<PlayerState> {
-    // currently just using default store logic without additional logic
+    @Override
+    protected PlayerState defaultState() {
+        return new PlayerState(null, null, null, false, 0, 0, List.of());
+    }
 }

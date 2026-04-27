@@ -12,8 +12,9 @@ public class MainCoordinator {
     private final NowPlayingPresenter nowPlayingPresenter;
 
     // todo: they are currently referenced from MainGui, ideally they can be private after refactoring is complete
-    SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
+    SecondaryMonitorGui secondaryMonitorGui;
 
+    PreferencesStore preferencesStore = new PreferencesStore();
     PlaylistStore playlistStore = new PlaylistStore();
     PlayerStore playerStore = new PlayerStore();
     PlaybackDevicesStore playbackDevicesStore = new PlaybackDevicesStore();
@@ -29,6 +30,7 @@ public class MainCoordinator {
         nowPlayingPresenter = new NowPlayingPresenter(playerService, shuffleAlgorithm);
 
         // create GUI
+        secondaryMonitorGui = new SecondaryMonitorGui(playerStore, preferencesStore, shuffleAlgorithm);
         MainGui mainGui = new MainGui(queuePresenter, nowPlayingPresenter, this);
 
         // init presenters

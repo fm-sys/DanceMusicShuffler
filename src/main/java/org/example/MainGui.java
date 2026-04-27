@@ -5,7 +5,6 @@ import com.formdev.flatlaf.extras.components.FlatTextField;
 import com.formdev.flatlaf.extras.components.FlatTriStateCheckBox;
 import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.formdev.flatlaf.ui.FlatEmptyBorder;
-import org.example.api.LocalSpotifyProvider;
 import org.example.gui.*;
 import org.example.models.PlaybackDevice;
 import org.example.models.PlaylistModel;
@@ -79,16 +78,6 @@ public class MainGui implements QueueView, NowPlayingView {
         createQueueList();
         createCenterOptionsPanel();
         createNowPlaying();
-
-        new Timer(1000, evt -> {
-            if (LocalSpotifyProvider.INSTANCE.titleHasChanged()) {
-                Scheduler.waitForWebApiDelayAndRun(nowPlayingPresenter::triggerPlayerRefresh);
-            } else if (controller.secondaryMonitorGui.getProgress() == 1.0 && !controller.secondaryMonitorGui.isPaused()) {
-                // Song is about to end, refresh player state to get the next song
-                Scheduler.waitForWebApiDelayAndRun(nowPlayingPresenter::triggerPlayerRefresh);
-            }
-        }).start();
-
 
         frame.addWindowFocusListener(new WindowFocusListener() {
             @Override
@@ -219,7 +208,7 @@ public class MainGui implements QueueView, NowPlayingView {
         loadButton.addActionListener(e -> {
             loadButton.setText("Loading...");
             loadButton.setEnabled(false);
-            PersistentPreferences.loadAsync(controller.playlistStore, "prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadButton, prefs)));
+            PersistentPreferences.loadAsync(controller.playlistStore, controller.preferencesStore, "prefs.json");
         });
         labeledPanelConfig.add(loadButton);
 
@@ -229,7 +218,7 @@ public class MainGui implements QueueView, NowPlayingView {
             if (result != JOptionPane.YES_OPTION) {
                 return;
             }
-            PersistentPreferences.store(controller.playlistStore, (int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getText(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected());
+            PersistentPreferences.store(controller.playlistStore, controller.preferencesStore.get()/*(int) songNumberSpinner.getValue(), (int) cooldownSpinner.getValue(), groupPlaylistsCheckbox.isSelected(), playlistsFilterTextField.getText(), secondaryGuiShowSideSheetCheckbox.isSelected(), secondaryGuiCoverCheckbox.isSelected(), secondaryGuiColoredBackgroundCheckbox.isSelected()*/);
         });
         labeledPanelConfig.add(storeButton);
 
@@ -312,23 +301,23 @@ public class MainGui implements QueueView, NowPlayingView {
         centerPanel.add(Box.createVerticalGlue());
     }
 
-    private void applyPreferences(JButton loadPrefsButton, PersistentPreferences.MainGuiParams params) {
+    private void applyPreferences(JButton loadPrefsButton, PreferenceParams params) {
         if (params != null) {
-            songNumberSpinner.setValue(params.count);
-            cooldownSpinner.setValue(params.cooldown);
-            groupPlaylistsCheckbox.setSelected(params.groupPlaylists);
-            playlistsFilterTextField.setText(params.searchString);
-            secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel);
-            controller.secondaryMonitorGui.setSidePanelVisible(params.showSidePanel);
-            secondaryGuiCoverCheckbox.setSelected(params.showSidePanel);
-            controller.secondaryMonitorGui.setCoverVisible(params.showCover);
-            secondaryGuiColoredBackgroundCheckbox.setSelected(params.colorBackground);
-            controller.secondaryMonitorGui.setColoredBackground(params.colorBackground);
+            songNumberSpinner.setValue(params.count());
+            cooldownSpinner.setValue(params.cooldown());
+            groupPlaylistsCheckbox.setSelected(params.groupPlaylists());
+            playlistsFilterTextField.setText(controller.playlistStore.getFilterText());
+            secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel());
+//            controller.secondaryMonitorGui.setSidePanelVisible(params.showSidePanel());
+            secondaryGuiCoverCheckbox.setSelected(params.showSidePanel());
+//            controller.secondaryMonitorGui.setCoverVisible(params.showCover());
+            secondaryGuiColoredBackgroundCheckbox.setSelected(params.colorBackground());
+//            controller.secondaryMonitorGui.setColoredBackground(params.colorBackground());
             recreatePlaylistsList();
         } else {
             int result = JOptionPane.showConfirmDialog(frame, "No user configuration stored, load default prefs?", "Load defaults", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (result == JOptionPane.YES_OPTION) {
-                PersistentPreferences.loadAsync(controller.playlistStore, "default-prefs.json").thenAccept(prefs -> SwingUtilities.invokeLater(() -> applyPreferences(loadPrefsButton, prefs)));
+                PersistentPreferences.loadAsync(controller.playlistStore, controller.preferencesStore, "default-prefs.json");
                 return;
             }
         }

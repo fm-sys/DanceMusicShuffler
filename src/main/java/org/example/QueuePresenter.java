@@ -29,7 +29,7 @@ public class QueuePresenter {
         List<TrackWithBadges> queueTracks = new ArrayList<>();
 
         state.queue().forEach(item -> {
-            ArrayList<String> badges = shuffleAlgorithm.getBadges(item);
+            List<String> badges = shuffleAlgorithm.getBadges(item);
             queueTracks.add(new TrackWithBadges(item, badges, shuffleAlgorithm.wasShuffled(item)));
         });
 

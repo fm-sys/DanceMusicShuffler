@@ -1,6 +1,8 @@
 package org.example;
 
+import org.example.api.LocalSpotifyProvider;
 import org.example.models.PlaybackDevice;
+import org.example.util.Scheduler;
 import org.example.worker.ShuffleAlgorithm;
 
 import javax.swing.*;
@@ -23,6 +25,14 @@ public class NowPlayingPresenter {
         playerService.playerStore.subscribe(this::update);
         playerService.playbackDevicesStore.subscribe(this::updatePlaybackDevices);
 
+        new Timer(1000, evt -> {
+            if (LocalSpotifyProvider.INSTANCE.titleHasChanged()) {
+                Scheduler.waitForWebApiDelayAndRun(this::triggerPlayerRefresh);
+            } else if (playerService.playerStore.get().getProgressPercentage() == 1.0 && playerService.playerStore.get().isPlaying()) {
+                // Song is about to end, refresh player state to get the next song
+                Scheduler.waitForWebApiDelayAndRun(this::triggerPlayerRefresh);
+            }
+        }).start();
     }
 
     private void update(PlayerState state) {

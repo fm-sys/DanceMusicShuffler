@@ -42,6 +42,9 @@ public class PlaylistStore extends AbstractStore<List<PlaylistModel>> {
      * Update the filter text and return whether it has changed. The filter text is normalized to lower case and trimmed.
      */
     public boolean setFilterText(String newFilter) {
+        if (newFilter == null) {
+            return false;
+        }
         String filterNormalized = newFilter.toLowerCase().trim();
         if (filterNormalized.equals(filterText)) {
             return false;
@@ -49,5 +52,14 @@ public class PlaylistStore extends AbstractStore<List<PlaylistModel>> {
 
         filterText = filterNormalized;
         return true;
+    }
+
+    public String getFilterText() {
+        return filterText;
+    }
+
+    @Override
+    protected List<PlaylistModel> defaultState() {
+        return List.of();
     }
 }

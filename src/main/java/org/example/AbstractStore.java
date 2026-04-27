@@ -8,6 +8,12 @@ public abstract class AbstractStore<T> {
     private T state;
     private final List<Consumer<T>> listeners = new ArrayList<>();
 
+    public AbstractStore() {
+        state = defaultState();
+    }
+
+    protected abstract T defaultState();
+
     public void setState(T newState) {
         this.state = newState;
         notifyListeners();

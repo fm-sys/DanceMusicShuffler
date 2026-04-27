@@ -1,4 +1,5 @@
-import org.example.SecondaryMonitorGui;
+import org.example.*;
+import org.example.worker.ShuffleAlgorithm;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
@@ -13,13 +14,15 @@ public class MockedSecondaryMonitor {
     public static void main(String[] args) {
         System.out.println("This is a mocked secondary monitor for testing purposes.");
 
-        SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui();
+        PlayerStore playerStore = new PlayerStore();
+        SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui(playerStore, new PreferencesStore(), new ShuffleAlgorithm(new PlaylistStore()));
         secondaryMonitorGui.launchSecondaryMonitorGui(true);
-        secondaryMonitorGui.setProgress(1000000, 2000000);
+//        secondaryMonitorGui.setProgress(1000000, 2000000);
 
         Track dummyTrack = new Track.Builder()
                 .setName("Test Song")
                 .setArtists(new ArtistSimplified.Builder().setName("Test Artist").build())
+                .setDurationMs(3 * 60 * 1000)
                 .build();
 
         BufferedImage backgroundImage;
@@ -29,8 +32,6 @@ public class MockedSecondaryMonitor {
             throw new RuntimeException(e);
         }
 
-        secondaryMonitorGui.setCoverVisible(false);
-        secondaryMonitorGui.update(null, backgroundImage, dummyTrack, List.of("Badge A", "Badge B", "Badge C"));
-        secondaryMonitorGui.updateSidePanel(List.of(List.of("First Badge"), List.of("Second Badge", "Another Badge"), List.of("Third Badge")));
+        playerStore.setState(new PlayerState(dummyTrack, null, backgroundImage, true, 60 * 1000, System.currentTimeMillis(), List.of()));
     }
 }

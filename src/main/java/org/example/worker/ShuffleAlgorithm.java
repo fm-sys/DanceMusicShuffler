@@ -45,7 +45,7 @@ public class ShuffleAlgorithm {
         return getUsedTrackIfExists(track) != null;
     }
 
-    public ArrayList<String> getBadges(IPlaylistItem track) {
+    public List<String> getBadges(IPlaylistItem track) { // todo: this should not be part of ShuffleAlgorithm, but we can refactor later
         ArrayList<String> badges = new ArrayList<>();
 
         UsedTrack usedTrack = getUsedTrackIfExists(track);

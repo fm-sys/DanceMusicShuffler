@@ -24,11 +24,15 @@ public class PlayerService {
     public final PlayerStore playerStore;
     public final PlaybackDevicesStore playbackDevicesStore;
 
-    private record MergedPlayback(Track currentTrack, boolean isPlaying, List<IPlaylistItem> queue) {}
-    private record CoverImage(BufferedImage coverImage, BufferedImage backgroundImage) {}
+    private record MergedPlayback(Track currentTrack, boolean isPlaying, int progressMs, long timestamp,
+                                  List<IPlaylistItem> queue) {
+    }
+
+    private record CoverImage(BufferedImage coverImage, BufferedImage backgroundImage) {
+    }
 
 
-    PlayerService(PlayerStore playerStore,  PlaybackDevicesStore playbackDevicesStore) {
+    PlayerService(PlayerStore playerStore, PlaybackDevicesStore playbackDevicesStore) {
         this.playerStore = playerStore;
         this.playbackDevicesStore = playbackDevicesStore;
     }
@@ -77,6 +81,8 @@ public class PlayerService {
                 : null;
 
         boolean isPlaying = currentlyPlayingResponse != null && Boolean.TRUE.equals(currentlyPlayingResponse.getIs_playing());
+        int progressMs = currentlyPlayingResponse != null && currentlyPlayingResponse.getProgress_ms() != null ? currentlyPlayingResponse.getProgress_ms() : 0;
+        long timestamp = System.currentTimeMillis();
 
         List<IPlaylistItem> queueItems = new ArrayList<>();
         if (queueResponse.getQueue() != null) {
@@ -91,7 +97,7 @@ public class PlayerService {
         }
 
         Track effectiveCurrent = currentlyPlaying != null ? currentlyPlaying : queueCurrent;
-        return new MergedPlayback(effectiveCurrent, isPlaying, queueItems);
+        return new MergedPlayback(effectiveCurrent, isPlaying, progressMs, timestamp, queueItems);
     }
 
     /**
@@ -117,6 +123,8 @@ public class PlayerService {
                                         cover != null ? cover.coverImage() : null,
                                         cover != null ? cover.backgroundImage() : null,
                                         merged.isPlaying(),
+                                        merged.progressMs(),
+                                        merged.timestamp(),
                                         Collections.unmodifiableList(merged.queue())
                                 ))
                 )
