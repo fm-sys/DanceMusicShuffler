@@ -27,7 +27,7 @@ public abstract class AbstractStore<T> {
         listeners.add(l);
     }
 
-    private void notifyListeners() {
+    protected void notifyListeners() {
         listeners.forEach(l -> l.accept(state));
     }
 }

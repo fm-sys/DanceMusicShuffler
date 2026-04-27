@@ -7,7 +7,31 @@ import java.util.Collections;
 import java.util.List;
 
 public class PlaylistStore extends AbstractStore<List<PlaylistModel>> {
-    private String filterText = "";
+
+    public class FilterStore extends AbstractStore<String> {
+        @Override
+        protected String defaultState() {
+            return "";
+        }
+
+        @Override
+        public void setState(String newState) {
+            if (newState == null || FilterStore.this.get().equals(newState)) {
+                return;
+            }
+            boolean isNew = !normalized().equals(newState.toLowerCase().trim());
+            super.setState(newState);
+            if (isNew) {
+                PlaylistStore.this.notifyListeners();
+            }
+        }
+
+        private String normalized() {
+            return FilterStore.this.get().toLowerCase().trim();
+        }
+    }
+
+    private final FilterStore filterStore = new FilterStore();
 
     public void addPlaylist(PlaylistModel playlistModel) {
         List<PlaylistModel> playlists = new ArrayList<>(get());
@@ -26,36 +50,21 @@ public class PlaylistStore extends AbstractStore<List<PlaylistModel>> {
      * Get a collection of playlists which match the current filter.
      */
     public List<PlaylistModel> getFilteredPlaylists() {
-        if  (filterText.isBlank()) {
+        if  (filterStore.normalized().isBlank()) {
             return get();
         }
         return get().stream().filter(this::matchesFilter).toList();
     }
 
     private boolean matchesFilter(PlaylistModel playlist) {
-        return playlist.getPlaylist().getName().toLowerCase().contains(filterText) ||
-                playlist.getPlaylist().getDescription().toLowerCase().contains(filterText) ||
-                playlist.getPlaylist().getOwner().getDisplayName().toLowerCase().contains(filterText);
+        String filter = filterStore.normalized();
+        return playlist.getPlaylist().getName().toLowerCase().contains(filter) ||
+                playlist.getPlaylist().getDescription().toLowerCase().contains(filter) ||
+                playlist.getPlaylist().getOwner().getDisplayName().toLowerCase().contains(filter);
     }
 
-    /**
-     * Update the filter text and return whether it has changed. The filter text is normalized to lower case and trimmed.
-     */
-    public boolean setFilterText(String newFilter) {
-        if (newFilter == null) {
-            return false;
-        }
-        String filterNormalized = newFilter.toLowerCase().trim();
-        if (filterNormalized.equals(filterText)) {
-            return false;
-        }
-
-        filterText = filterNormalized;
-        return true;
-    }
-
-    public String getFilterText() {
-        return filterText;
+    public FilterStore filterText() {
+        return filterStore;
     }
 
     @Override

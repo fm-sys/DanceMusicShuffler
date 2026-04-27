@@ -10,6 +10,7 @@ import org.example.models.PlaybackDevice;
 import org.example.models.PlaylistModel;
 import org.example.models.TrackWithBadges;
 import org.example.util.Scheduler;
+import org.example.util.TextChangedListener;
 import org.example.worker.PersistentPreferences;
 import org.example.worker.PlaylistLoader;
 import org.example.worker.SpotifyOcrIntegration;
@@ -20,10 +21,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("UnnecessaryUnicodeEscape")
-public class MainGui implements QueueView, NowPlayingView {
+public class MainGui implements QueueView, NowPlayingView, PlaylistsView {
 
     public static final Color panelColor = new Color(25, 26, 28);
 
@@ -33,6 +35,7 @@ public class MainGui implements QueueView, NowPlayingView {
     final MainCoordinator controller; // todo: remove, handling should happen through presenters
     QueuePresenter queuePresenter;
     NowPlayingPresenter nowPlayingPresenter;
+    PlaylistsPresenter playlistsPresenter;
 
     JFrame frame;
 
@@ -66,9 +69,10 @@ public class MainGui implements QueueView, NowPlayingView {
         }
     };
 
-    public MainGui(QueuePresenter queuePresenter, NowPlayingPresenter nowPlayingPresenter, /*todo remove param*/ MainCoordinator mainCoordinator) {
+    public MainGui(QueuePresenter queuePresenter, NowPlayingPresenter nowPlayingPresenter, PlaylistsPresenter playlistsPresenter,/*todo remove param*/ MainCoordinator mainCoordinator) {
         this.queuePresenter = queuePresenter;
         this.nowPlayingPresenter = nowPlayingPresenter;
+        this.playlistsPresenter = playlistsPresenter;
         this.controller = mainCoordinator;
 
         frame = new JFrame();
@@ -306,14 +310,13 @@ public class MainGui implements QueueView, NowPlayingView {
             songNumberSpinner.setValue(params.count());
             cooldownSpinner.setValue(params.cooldown());
             groupPlaylistsCheckbox.setSelected(params.groupPlaylists());
-            playlistsFilterTextField.setText(controller.playlistStore.getFilterText());
+            playlistsFilterTextField.setText(controller.playlistStore.filterText().get());
             secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel());
 //            controller.secondaryMonitorGui.setSidePanelVisible(params.showSidePanel());
             secondaryGuiCoverCheckbox.setSelected(params.showSidePanel());
 //            controller.secondaryMonitorGui.setCoverVisible(params.showCover());
             secondaryGuiColoredBackgroundCheckbox.setSelected(params.colorBackground());
 //            controller.secondaryMonitorGui.setColoredBackground(params.colorBackground());
-            recreatePlaylistsList();
         } else {
             int result = JOptionPane.showConfirmDialog(frame, "No user configuration stored, load default prefs?", "Load defaults", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (result == JOptionPane.YES_OPTION) {
@@ -486,29 +489,23 @@ public class MainGui implements QueueView, NowPlayingView {
         playlistsFilterTextField.setPlaceholderText("Filter playlists by title, description or owner...");
         playlistsFilterTextField.setLeadingIcon(new FlatSearchIcon());
         playlistsFilterTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, playlistsFilterTextField.getPreferredSize().height));
-        playlistsFilterTextField.addCaretListener(e -> {
-            if (!controller.playlistStore.setFilterText(playlistsFilterTextField.getText())) {
-                return; //Text hasn't changed
+        playlistsFilterTextField.getDocument().addDocumentListener(new TextChangedListener() {
+            @Override
+            public void onChange() {
+                playlistsPresenter.filterTextChanged(playlistsFilterTextField.getText());
             }
-            recreatePlaylistsList();
         });
         outerPanel.add(AlignHelper.pad(playlistsFilterTextField, new Insets(4, 4, 4, 4)));
 
         selectAllCheckbox = new FlatTriStateCheckBox();
         selectAllCheckbox.setAllowIndeterminate(false);
-        selectAllCheckbox.addActionListener(e -> {
-            boolean isSelected = selectAllCheckbox.isSelected();
-            controller.playlistStore.getFilteredPlaylists().forEach(playlist -> playlist.setChecked(isSelected));
-            recreatePlaylistsList();
-        });
+        selectAllCheckbox.addActionListener(e -> playlistsPresenter.selectAllCheckboxClicked(selectAllCheckbox.isSelected()));
 
         outerPanel.add(AlignHelper.pad(AlignHelper.left(selectAllCheckbox), new Insets(0, 8, 8, 8)));
 
         playlistsListPanel = new JPanel();
         playlistsListPanel.setLayout(new BoxLayout(playlistsListPanel, BoxLayout.Y_AXIS));
         playlistsListPanel.setBackground(panelColor);
-
-        recreatePlaylistsList();
 
         JScrollPane scrollPane = new JScrollPane(playlistsListPanel);
         scrollPane.setBorder(new FlatEmptyBorder());
@@ -529,31 +526,33 @@ public class MainGui implements QueueView, NowPlayingView {
         drawerButton.setFocusable(false);
     }
 
-    private void recreatePlaylistsList() {
+    @Override
+    public void setPlaylistsLists(List<PlaylistModel> playlists) {
         playlistsListPanel.removeAll();
-
-        controller.playlistStore.getFilteredPlaylists().forEach(playlist -> {
+        playlists.forEach(playlist -> {
             JCheckBox checkBox = new JCheckBox(playlist.getPlaylist().getName() + " (" + playlist.getPlaylist().getItems().getTotal() + " Lieder)" + (playlist.isFromConfig() ? " [playlist from config]" : ""));
             checkBox.setSelected(playlist.isChecked());
-            checkBox.addActionListener(e -> {
-                playlist.setChecked(checkBox.isSelected());
-                updateSelectAllCheckbox();
-            });
+            checkBox.addActionListener(e -> playlistsPresenter.playlistCheckboxClicked(playlist, checkBox.isSelected()));
             playlistsListPanel.add(checkBox);
         });
         playlistsListPanel.revalidate(); // Updates layout
         playlistsListPanel.repaint();    // Redraws panel
-        updateSelectAllCheckbox();
     }
 
-    private void updateSelectAllCheckbox() {
-        var playlistsFiltered = controller.playlistStore.getFilteredPlaylists();
-        int selectedCount = (int) playlistsFiltered.stream().filter(PlaylistModel::isChecked).count();
-        selectAllCheckbox.setText(selectedCount + " von " + playlistsFiltered.size() + " ausgew\u00e4hlt");
+    @Override
+    public void setFilterText(String filterText) {
+        if (filterText.equals(playlistsFilterTextField.getText())) {
+            return; // avoid infinite callback look
+        }
+        playlistsFilterTextField.setText(filterText);
+    }
 
-        if (selectedCount == 0) {
+    @Override
+    public void updateSelectAllCheckbox(int selected, int all) {
+        selectAllCheckbox.setText(selected + " von " + all + " ausgew\u00e4hlt");
+        if (selected == 0) {
             selectAllCheckbox.setState(FlatTriStateCheckBox.State.UNSELECTED);
-        } else if (selectedCount != playlistsFiltered.size()) {
+        } else if (selected != all) {
             selectAllCheckbox.setState(FlatTriStateCheckBox.State.INDETERMINATE);
         } else {
             selectAllCheckbox.setState(FlatTriStateCheckBox.State.SELECTED);
@@ -666,5 +665,4 @@ public class MainGui implements QueueView, NowPlayingView {
         nowPlayingPanel.revalidate();
         nowPlayingPanel.repaint();
     }
-
 }

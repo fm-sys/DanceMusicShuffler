@@ -10,6 +10,7 @@ import java.util.Collection;
 public class MainCoordinator {
     private final QueuePresenter queuePresenter;
     private final NowPlayingPresenter nowPlayingPresenter;
+    private final PlaylistsPresenter playlistsPresenter;
 
     // todo: they are currently referenced from MainGui, ideally they can be private after refactoring is complete
     SecondaryMonitorGui secondaryMonitorGui;
@@ -28,14 +29,16 @@ public class MainCoordinator {
         // create presenters
         queuePresenter = new QueuePresenter(playerStore, shuffleAlgorithm);
         nowPlayingPresenter = new NowPlayingPresenter(playerService, shuffleAlgorithm);
+        playlistsPresenter =  new PlaylistsPresenter(playlistStore);
 
         // create GUI
         secondaryMonitorGui = new SecondaryMonitorGui(playerStore, preferencesStore, shuffleAlgorithm);
-        MainGui mainGui = new MainGui(queuePresenter, nowPlayingPresenter, this);
+        MainGui mainGui = new MainGui(queuePresenter, nowPlayingPresenter, playlistsPresenter, this);
 
         // init presenters
         queuePresenter.init(mainGui);
         nowPlayingPresenter.init(mainGui);
+        playlistsPresenter.init(mainGui);
 
         LocalSpotifyProvider.INSTANCE.initialize(playerStore);
 

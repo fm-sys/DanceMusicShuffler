@@ -33,7 +33,7 @@ public class PersistentPreferences {
         this.count = params.count();
         this.cooldown = params.cooldown();
         this.groupPlaylists = params.groupPlaylists();
-        this.searchString = playlistStore.getFilterText();
+        this.searchString = playlistStore.filterText().get();
         this.showSidePanel = params.showSidePanel();
         this.showCover = params.showCover();
         this.colorBackground = params.colorBackground();
@@ -79,8 +79,7 @@ public class PersistentPreferences {
             // Read JSON from a file and convert it to a Java object
             PersistentPreferences preferences = objectMapper.readValue(new File(fileName), PersistentPreferences.class);
 
-            playlistStore.setFilterText(preferences.searchString);
-            playlistStore.setState(playlistStore.get()); // Trigger update to apply filter
+            playlistStore.filterText().setState(preferences.searchString);
 
             // Enrich the playlists with the loaded preferences
             for (PersistentPlaylistModel persistentPlaylist : preferences.playlists) {
