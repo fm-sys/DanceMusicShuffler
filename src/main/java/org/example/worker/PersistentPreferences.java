@@ -1,6 +1,7 @@
 package org.example.worker;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.FilterStore;
 import org.example.PlaylistStore;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class PersistentPreferences {
 
@@ -22,7 +24,7 @@ public class PersistentPreferences {
     String searchString = null;
     boolean showSidePanel = true;
     boolean showCover = true;
-    boolean colorBackground = true;
+    boolean showBackground = true;
     List<PersistentPlaylistModel> playlists = null;
 
     public PersistentPreferences() {
@@ -37,9 +39,10 @@ public class PersistentPreferences {
         this.searchString = filterStore.get();
         this.showSidePanel = params.showSidePanel();
         this.showCover = params.showCover();
-        this.colorBackground = params.showBackground();
+        this.showBackground = params.showBackground();
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     public static class PersistentPlaylistModel {
         String id;
@@ -60,7 +63,7 @@ public class PersistentPreferences {
     }
 
     private PreferenceParams toPreferenceParams() {
-        return new PreferenceParams(count, cooldown, groupPlaylists, showSidePanel, showCover, colorBackground);
+        return new PreferenceParams(count, cooldown, groupPlaylists, showSidePanel, showCover, showBackground);
     }
 
     /**
