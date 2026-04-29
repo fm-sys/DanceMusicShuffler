@@ -72,16 +72,18 @@ public class PersistentPreferences {
      *
      * @param playlistStore The playlist store object to be enriched.
      */
-    public static void loadAsync(PlaylistStore playlistStore, FilterStore filterStore, PreferencesStore preferencesStore, String fileName) {
-        CompletableFuture.runAsync(() -> load(playlistStore, filterStore, preferencesStore, fileName));
+    public static CompletableFuture<Boolean> loadAsync(PlaylistStore playlistStore, FilterStore filterStore, PreferencesStore preferencesStore, String fileName) {
+        return CompletableFuture.supplyAsync(() -> load(playlistStore, filterStore, preferencesStore, fileName));
     }
 
-    private static void load(PlaylistStore playlistStore, FilterStore filterStore, PreferencesStore preferencesStore, String fileName) {
+    private static boolean load(PlaylistStore playlistStore, FilterStore filterStore, PreferencesStore preferencesStore, String fileName) {
         ObjectMapper objectMapper = new ObjectMapper();
+        boolean couldLoad = false;
 
         try {
             // Read JSON from a file and convert it to a Java object
             PersistentPreferences preferences = objectMapper.readValue(new File(fileName), PersistentPreferences.class);
+            couldLoad = true;
 
             filterStore.setState(preferences.searchString);
 
@@ -105,6 +107,7 @@ public class PersistentPreferences {
         } catch (IOException e) {
             System.out.println("Failed to load preferences: " + e.getMessage());
         }
+        return couldLoad;
     }
 
     public static void store(PlaylistStore playlistStore, FilterStore filterStore, PreferenceParams params) {

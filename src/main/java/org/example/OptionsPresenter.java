@@ -36,7 +36,17 @@ public class OptionsPresenter {
     }
 
     public void onLoadPrefsClicked() {
-        PersistentPreferences.loadAsync(playlistStore, filterStore, preferencesStore, "prefs.json");
+        PersistentPreferences.loadAsync(playlistStore, filterStore, preferencesStore, "prefs.json").thenAccept(success -> {
+            if (!success) {
+                System.err.println("Failed to load preferences, loading default values instead...");
+                PersistentPreferences.loadAsync(playlistStore, filterStore, preferencesStore, "default-prefs.json").thenAccept(defaultSuccess -> {
+                    if (!defaultSuccess) {
+                        System.err.println("Failed to load default preferences as well, giving up.");
+                        updatePreferences(preferencesStore.get());
+                    }
+                });
+            }
+        });
     }
 
     public void onStorePrefsClicked() {
@@ -79,7 +89,14 @@ public class OptionsPresenter {
         CompletableFuture<Boolean> loadFuture = PlaylistLoader.loadPlaylistsAsync(playlistStore.getSelectedPlaylists());
         loadFuture.thenAccept(success -> {
             if (success) {
-                shuffleAlgorithm.shuffleAsync(preferencesStore.get()).thenAccept(result -> Scheduler.waitForWebApiDelayAndRun(() -> shuffleFinished(result)));
+                shuffleAlgorithm.shuffleAsync(preferencesStore.get())
+                        .thenAccept(result -> Scheduler.waitForWebApiDelayAndRun(() -> shuffleFinished(result)))
+                        .whenComplete((r, ex) -> {
+                            if (ex != null) {
+                                System.err.println("Caught Exception: " + ex.getMessage());
+                                shuffleFinished(false);
+                            }
+                        });
             } else {
                 shuffleFinished(false);
             }

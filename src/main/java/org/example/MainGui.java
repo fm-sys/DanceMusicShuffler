@@ -330,7 +330,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         loadAndShuffleButton.setEnabled(true);
         loadAndShuffleButton.setText("Load Playlists and Shuffle");
         if (!success) {
-            JOptionPane.showMessageDialog(frame, "Something went wrong. Please try again.");
+            JOptionPane.showMessageDialog(frame, "Shuffle didn't complete", "Something went wrong", JOptionPane.ERROR_MESSAGE);
         }
         nowPlayingPresenter.triggerPlayerRefresh();
     }

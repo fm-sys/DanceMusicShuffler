@@ -76,7 +76,7 @@ public class ShuffleAlgorithm {
         List<PlaylistGroup> groups = groupPlaylists ? PlaylistGroup.createGroups(playlistStore.getSelectedPlaylists()) : null;
 
         for (PlaylistModel playlist : playlistStore.getSelectedPlaylists()) {
-            if ((!wasExclusive || !playlist.isExclusive()) && !isRecentlyUsed(playlist, groups)) {
+            if ((!wasExclusive || !playlist.isExclusive()) && !isRecentlyUsed(playlist, groups) && playlist.getWeight() > 0) {
                 allowedPlaylists.add(playlist);
             }
         }
