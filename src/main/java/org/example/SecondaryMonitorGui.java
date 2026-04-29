@@ -2,24 +2,28 @@ package org.example;
 
 import org.example.gui.*;
 import org.example.worker.PreventSleep;
+import org.example.worker.ShuffleAlgorithm;
 import se.michaelthelin.spotify.model_objects.interfaces.IArtist;
-import se.michaelthelin.spotify.model_objects.specification.Track;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.font.TextAttribute;
-import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("UnnecessaryUnicodeEscape")
 public class SecondaryMonitorGui {
 
     private static final Map<TextAttribute, Float> FONT_BADGE_WEIGHT = Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_DEMIBOLD);
+    private static final Color BADGE_BACKGROUND = new Color(255, 255, 255, 64);
+
+    private final PlayerStore playerStore;
+    private final PreferencesStore preferencesStore;
+
+    private final ShuffleAlgorithm shuffleAlgorithm;
 
     private final BackgroundPanel backgroundPanel;
 
@@ -32,18 +36,17 @@ public class SecondaryMonitorGui {
     private final JPanel sidePanel;
 
     private final AnimatedWavyProgressBar progressBar;
-    private String currentTrackId = null;
-    private long startTimestamp = 0;
-    private long duration = 0;
-    private boolean paused = false;
+    private final Timer timer;
 
-    private BufferedImage backgroundImage;
-    private boolean coloredBackground = true;
 
-    public SecondaryMonitorGui() {
+    public SecondaryMonitorGui(PlayerStore playerStore, PreferencesStore preferencesStore, ShuffleAlgorithm shuffleAlgorithm) {
+
+        this.playerStore = playerStore;
+        this.preferencesStore = preferencesStore;
+        this.shuffleAlgorithm = shuffleAlgorithm;
 
         // Create a JFrame
-        frame = new JFrame("Fullscreen on Secondary Monitor");
+        frame = new JFrame("Dance Floor Display");
         frame.setUndecorated(true);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -86,7 +89,7 @@ public class SecondaryMonitorGui {
         coverPanel.add(Box.createVerticalStrut(10));
 
         artistLabel = new JLabel("Artist");
-        artistLabel.setFont(artistLabel.getFont().deriveFont(Font.ITALIC,24.0f));
+        artistLabel.setFont(artistLabel.getFont().deriveFont(Font.ITALIC, 24.0f));
         artistLabel.setForeground(new Color(255, 255, 255, 192));
         coverPanel.add(AlignHelper.center(artistLabel));
 
@@ -117,6 +120,27 @@ public class SecondaryMonitorGui {
         progressBarContainer.setBorder(BorderFactory.createEmptyBorder(0, 0, 35, 0));
         progressBarContainer.add(progressBar, BorderLayout.CENTER);
         frame.getContentPane().add(progressBarContainer, BorderLayout.PAGE_END);
+
+        update(playerStore.get());
+        playerStore.subscribe(this::update);
+        applyPrefs(preferencesStore.get());
+        preferencesStore.subscribe(this::applyPrefs);
+
+         timer = new Timer(16, e -> {
+             PlayerState state = playerStore.get();
+            progressBar.setPaused(!state.isPlaying());
+            progressBar.setProgress(state.getProgressPercentage());
+        });
+
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                PreventSleep.stopPreventingSleepLoop();
+                timer.stop();
+            }
+        });
+
         launchSecondaryMonitorGui(false);
     }
 
@@ -144,59 +168,37 @@ public class SecondaryMonitorGui {
 
         frame.setVisible(true);
 
-        // Close operation - don't exit the whole application
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-
         PreventSleep.startPreventingSleepLoop();
-
-        new Timer(16, e -> {
-            progressBar.setPaused(paused);
-            if (!paused) {
-                long elapsedTime = System.currentTimeMillis() - startTimestamp;
-                progressBar.setProgress((float) elapsedTime / (float) duration);
-            }
-        }).start();
-
-        frame.addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override
-            public void windowClosing(java.awt.event.WindowEvent e) {
-                PreventSleep.stopPreventingSleepLoop();
-            }
-        });
+        timer.start();
 
         SwingUtilities.invokeLater(frame::toFront);
 
         return true;
     }
 
-    public void update(BufferedImage coverImage, BufferedImage background, Track track, List<String> badges) {
+    private void update(PlayerState playerState) {
         SwingUtilities.invokeLater(() -> {
             try {
-                if (coverImage != null) {
-                    cover.setIcon(new ImageIcon(coverImage));
+                if (playerState.track() == null) {
+                    return;
                 }
 
-                backgroundImage = background;
-                if (coloredBackground) {
-                    backgroundPanel.setBackgroundImage(backgroundImage);
+                if (playerState.coverImage() != null) {
+                    cover.setIcon(new ImageIcon(playerState.coverImage()));
                 }
 
-                titleLabel.setText(track.getName());
-                artistLabel.setText(Arrays.stream(track.getArtists()).map(IArtist::getName).collect(Collectors.joining(", ")));
-
-                if (currentTrackId == null) {
-                    currentTrackId = track.getId();
-                } else if (!currentTrackId.equals(track.getId())) {
-                    startTimestamp = System.currentTimeMillis();
-                    currentTrackId = track.getId();
-                    duration = track.getDurationMs();
+                if (preferencesStore.get().showBackground()) {
+                    backgroundPanel.setBackgroundImage(playerState.backgroundImage());
                 }
+
+                titleLabel.setText(playerState.track().getName());
+                artistLabel.setText(Arrays.stream(playerState.track().getArtists()).map(IArtist::getName).collect(Collectors.joining(", ")));
 
                 badgesPanel.removeAll();
 
-                for (String badge : badges) {
+                for (String badge : shuffleAlgorithm.getBadges(playerState.track())) {
                     BadgeLabel badgeLabel = new BadgeLabel(badge);
-                    badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
+                    badgeLabel.setBadgeColor(BADGE_BACKGROUND);
                     badgeLabel.setFont(badgeLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(36.0f));
                     badgesPanel.add(badgeLabel);
                 }
@@ -204,89 +206,72 @@ public class SecondaryMonitorGui {
                 badgesPanel.revalidate();
                 badgesPanel.repaint();
 
+                updateSidePanel(playerState.queue().stream().map(shuffleAlgorithm::getBadges).limit(5).toList());
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
     }
 
-    public void updateSidePanel(List<List<String>> badges) {
-        SwingUtilities.invokeLater(() -> {
-            sidePanel.removeAll();
+    private void updateSidePanel(List<List<String>> badges) {
+        sidePanel.removeAll();
 
-            sidePanel.add(Box.createVerticalGlue());
+        sidePanel.add(Box.createVerticalGlue());
 
-            JLabel label = new JLabel("N\u00e4chste T\u00e4nze");
-            label.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 36.0f));
-            label.setForeground(Color.WHITE);
-            sidePanel.add(AlignHelper.center(label));
+        JLabel label = new JLabel("N\u00e4chste T\u00e4nze");
+        label.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 36.0f));
+        label.setForeground(Color.WHITE);
+        sidePanel.add(AlignHelper.center(label));
 
-            sidePanel.add(Box.createVerticalStrut(20));
+        sidePanel.add(Box.createVerticalStrut(20));
 
-            for (List<String> badge : badges) {
-                Box b = Box.createHorizontalBox();
-                b.add(Box.createHorizontalGlue());
+        for (List<String> badge : badges) {
+            Box b = Box.createHorizontalBox();
+            b.add(Box.createHorizontalGlue());
 
-                BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
-                badgeLabel.setBadgeColor(new Color(255, 255, 255, 64));
-                badgeLabel.setFont(badgeLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(24.0f));
-                b.add(badgeLabel);
+            BadgeLabel badgeLabel = new BadgeLabel(badge.isEmpty() ? "  ?  " : badge.getFirst());
+            badgeLabel.setBadgeColor(BADGE_BACKGROUND);
+            badgeLabel.setFont(badgeLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(24.0f));
+            b.add(badgeLabel);
 
-                if (badge.size() > 1) {
-                    JLabel moreLabel = new JLabel(" + " + (badge.size() - 1));
-                    moreLabel.setForeground(Color.WHITE);
-                    moreLabel.setFont(moreLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(24.0f));
-                    b.add(moreLabel);
-                }
-
-                b.add(Box.createHorizontalGlue());
-                sidePanel.add(b);
+            if (badge.size() > 1) {
+                JLabel moreLabel = new JLabel(" + " + (badge.size() - 1));
+                moreLabel.setForeground(Color.WHITE);
+                moreLabel.setFont(moreLabel.getFont().deriveFont(FONT_BADGE_WEIGHT).deriveFont(24.0f));
+                b.add(moreLabel);
             }
 
-            sidePanel.add(Box.createVerticalGlue());
+            b.add(Box.createHorizontalGlue());
+            sidePanel.add(b);
+        }
 
-            sidePanel.revalidate();
-            sidePanel.repaint();
-        });
+        sidePanel.add(Box.createVerticalGlue());
+
+        sidePanel.revalidate();
+        sidePanel.repaint();
     }
-
-    public void setPaused(boolean paused) {
-        this.paused = paused;
-    }
-
-    public boolean isPaused() {
-        return paused;
-    }
-
-    public void setProgress(long progressMs, long durationMs) {
-        this.startTimestamp = System.currentTimeMillis() - progressMs;
-        this.duration = durationMs;
-    }
-
-    public void resetProgressToZero() {
-        this.startTimestamp = System.currentTimeMillis();
-    }
-
-    public float getProgress() {
-        return progressBar.getProgress();
-    }
-
-    public void setSidePanelVisible(boolean visible) {
+    private void setSidePanelVisible(boolean visible) {
         sidePanel.setPreferredSize(new Dimension(visible ? 500 : 0, 0));
         sidePanel.revalidate();
     }
 
-    public void setCoverVisible(boolean visible) {
+    private void setCoverVisible(boolean visible) {
         cover.setVisible(visible);
         cover.revalidate();
     }
 
-    public void setColoredBackground(boolean selected) {
-        this.coloredBackground = selected;
-        if (coloredBackground) {
-            backgroundPanel.setBackgroundImage(backgroundImage);
+    private void setColoredBackground(boolean enabled) {
+        if (enabled) {
+            backgroundPanel.setBackgroundImage(playerStore.get().backgroundImage());
         } else {
             backgroundPanel.setBackgroundImage(null);
         }
+    }
+
+    private void applyPrefs(PreferenceParams prefs) {
+        setSidePanelVisible(prefs.showSidePanel());
+        setCoverVisible(prefs.showCover());
+        setColoredBackground(prefs.showBackground());
     }
 }

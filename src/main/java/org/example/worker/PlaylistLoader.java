@@ -10,10 +10,10 @@ import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.model_objects.specification.Playlist;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class PlaylistLoader {
@@ -28,7 +28,7 @@ public class PlaylistLoader {
             playlistModel.setExclusive(loadFrom.exclusive);
             playlistModel.setWeight(loadFrom.weight);
             playlistModel.setFromConfig(true);
-            playlistStore.addPlaylist(playlistModel);
+            SwingUtilities.invokeLater(() -> playlistStore.addPlaylist(playlistModel));
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             System.out.println("Failed to load playlist with id " + loadFrom.id + ": " + e.getMessage());
         }

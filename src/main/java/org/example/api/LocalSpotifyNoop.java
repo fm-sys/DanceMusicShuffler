@@ -1,15 +1,10 @@
 package org.example.api;
 
-import se.michaelthelin.spotify.model_objects.IPlaylistItem;
+import org.example.PlayerStore;
 
 public class LocalSpotifyNoop implements LocalSpotifyProvider.LocalSpotifyIntegration {
     @Override
     public boolean titleHasChanged() {
-        return false;
-    }
-
-    @Override
-    public boolean isPaused() {
         return false;
     }
 
@@ -19,7 +14,7 @@ public class LocalSpotifyNoop implements LocalSpotifyProvider.LocalSpotifyIntegr
     }
 
     @Override
-    public void initialize(IPlaylistItem currentTrack) {
+    public void initialize(PlayerStore playerStore) {
 
     }
 }
