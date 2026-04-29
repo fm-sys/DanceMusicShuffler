@@ -51,10 +51,8 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
     JButton loadPrefsButton;
     private boolean updatingPreferencesFromStore;
 
-    JPanel[] sidePanels = new JPanel[2];
-    JPanel leftHelperPanel = new JPanel();
-    JButton drawerButton = new JButton("\u2630");  // ☰
-    Drawer drawer;
+    JSplitPane mainSplitPane;
+    JSplitPane sideSplitPane;
 
     JComboBox<PlaybackDevice> devicesComboBox;
 
@@ -74,10 +72,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
 
         frame = new JFrame();
         frame.setLayout(new BorderLayout());
-
-        createPlaylistList();
-        createQueueList();
-        createCenterOptionsPanel();
+        createMainContentPanels();
         createNowPlaying();
 
         frame.addWindowFocusListener(new WindowFocusListener() {
@@ -92,35 +87,6 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
             }
         });
 
-        frame.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-
-                int width = frame.getWidth() < 1000 ? (frame.getWidth() - 450) : ((frame.getWidth() - 400) / 2);
-
-                for (JPanel panel : sidePanels) {
-                    panel.setPreferredSize(new Dimension(width, 0));
-                    panel.revalidate();
-                }
-
-                leftHelperPanel.removeAll();
-
-
-                if (frame.getWidth() < 1000) {
-                    // Small screen: show toggle button
-                    leftHelperPanel.add(drawerButton, BorderLayout.CENTER);
-                    drawer.setContent(sidePanels[0]);
-                    drawer.build();
-                } else {
-                    drawer.setContent(null);
-                    leftHelperPanel.add(sidePanels[0], BorderLayout.CENTER);
-                }
-
-                leftHelperPanel.revalidate();
-                leftHelperPanel.repaint();
-            }
-        });
-
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("Dance Music Shuffler");
         var icon = getClass().getResource("/icon48.png");
@@ -131,20 +97,39 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         frame.setSize(new Dimension(1000, 675));
         frame.setLocationByPlatform(true);
         frame.setVisible(true);
-        loadAndShuffleButton.requestFocusInWindow();
-        SwingUtilities.invokeLater(frame::toFront);
-
+        SwingUtilities.invokeLater(() -> {
+            sideSplitPane.setDividerLocation(300);
+            SwingUtilities.invokeLater(() -> {
+                mainSplitPane.setDividerLocation(400 - 4 * 8);
+                frame.toFront();
+                loadAndShuffleButton.requestFocusInWindow();
+            });
+        });
     }
 
-    private void createCenterOptionsPanel() {
-        JPanel centerPanel = new JPanel();
-        centerPanel.setBackground(panelColor);
-        centerPanel.putClientProperty(FlatClientProperties.STYLE, "arc: 32");
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        frame.add(AlignHelper.pad(centerPanel, new Insets(0, 0, 8, 0)), BorderLayout.CENTER);
+    private void createMainContentPanels() {
+        mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createCenterOptionsPanel(), createQueueList());
+        mainSplitPane.setResizeWeight(1.0);
+        mainSplitPane.setOneTouchExpandable(true);
+        mainSplitPane.putClientProperty( "JSplitPane.expandableSide", "left" );
+        mainSplitPane.setBorder(BorderFactory.createEmptyBorder());
 
-        centerPanel.add(Box.createVerticalGlue());
+        sideSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, createPlaylistList(), mainSplitPane);
+        sideSplitPane.setResizeWeight(0);
+        sideSplitPane.setOneTouchExpandable(true);
+        sideSplitPane.putClientProperty( "JSplitPane.expandableSide", "right" );
+        sideSplitPane.setBorder(BorderFactory.createEmptyBorder(0, 8, 8, 8));
+        frame.add(sideSplitPane, BorderLayout.CENTER);
+    }
+
+    private JPanel createCenterOptionsPanel() {
+        JPanel centerOptionsPanel = new JPanel();
+        centerOptionsPanel.setBackground(panelColor);
+        centerOptionsPanel.putClientProperty(FlatClientProperties.STYLE, "arc: 32");
+        centerOptionsPanel.setLayout(new BoxLayout(centerOptionsPanel, BoxLayout.Y_AXIS));
+        centerOptionsPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        centerOptionsPanel.add(Box.createVerticalGlue());
 
         JPanel labeledPanelOptions = new JPanel();
         labeledPanelOptions.setBackground(panelColor);
@@ -153,7 +138,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
                 BorderFactory.createTitledBorder("Options"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        centerPanel.add(labeledPanelOptions);
+        centerOptionsPanel.add(labeledPanelOptions);
 
         JLabel songNumberLabel = new JLabel("Number of songs to add to queue:");
         labeledPanelOptions.add(AlignHelper.left(songNumberLabel));
@@ -209,7 +194,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         weightsButton.addActionListener(e -> optionsPresenter.onWeightsClicked());
         labeledPanelOptions.add(AlignHelper.left(weightsButton));
 
-        centerPanel.add(Box.createVerticalStrut(10));
+        centerOptionsPanel.add(Box.createVerticalStrut(10));
 
         JPanel labeledPanelConfig = new JPanel(new GridLayout(0, 2, 10, 0));
         labeledPanelConfig.setBackground(panelColor);
@@ -218,7 +203,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
         labeledPanelConfig.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
-        centerPanel.add(labeledPanelConfig);
+        centerOptionsPanel.add(labeledPanelConfig);
 
         loadPrefsButton = new JButton("\u2191   Load configuration");
         loadPrefsButton.addActionListener(e -> {
@@ -238,7 +223,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         });
         labeledPanelConfig.add(storeButton);
 
-        centerPanel.add(Box.createVerticalStrut(10));
+        centerOptionsPanel.add(Box.createVerticalStrut(10));
 
         JPanel labeledPanelMonitor = new JPanel(new GridLayout(0, 1));
         labeledPanelMonitor.setBackground(panelColor);
@@ -247,7 +232,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
         labeledPanelMonitor.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
-        centerPanel.add(labeledPanelMonitor);
+        centerOptionsPanel.add(labeledPanelMonitor);
 
         secondaryGuiShowSideSheetCheckbox = new JCheckBox("Show side sheet");
         secondaryGuiShowSideSheetCheckbox.setSelected(true);
@@ -287,7 +272,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         });
         labeledPanelMonitor.add(launchGuiButton);
 
-        centerPanel.add(Box.createVerticalStrut(10));
+        centerOptionsPanel.add(Box.createVerticalStrut(10));
 
         loadAndShuffleButton = new JButton("Load Playlists and Shuffle");
         loadAndShuffleButton.putClientProperty(FlatClientProperties.STYLE, "arc: 16");
@@ -307,9 +292,11 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         expandedButtonPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         expandedButtonPanel.add(loadAndShuffleButton);
         frame.getRootPane().setDefaultButton(loadAndShuffleButton);
-        centerPanel.add(expandedButtonPanel);
+        centerOptionsPanel.add(expandedButtonPanel);
 
-        centerPanel.add(Box.createVerticalGlue());
+        centerOptionsPanel.add(Box.createVerticalGlue());
+
+        return centerOptionsPanel;
     }
 
     public void applyPreferences(PreferenceParams params) {
@@ -407,7 +394,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         dialog.setVisible(true);
     }
 
-    private void createQueueList() {
+    private JPanel createQueueList() {
 
         JPanel outerPanel = new JPanel();
         outerPanel.setBackground(panelColor);
@@ -420,7 +407,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         outerPanel.add(AlignHelper.center(queueLabel));
 
         if (coordinator.spotifyOcrProcessor.isSupported()) {
-            JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify In-App Overlay (experimental)");
+            JCheckBox ocrOverlayCheckbox = new JCheckBox("Enable Spotify Overlay (experimental)");
             ocrOverlayCheckbox.setSelected(false);
             ocrOverlayCheckbox.addActionListener(e -> {
                 if (ocrOverlayCheckbox.isSelected()) {
@@ -447,9 +434,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
 
         outerPanel.add(AlignHelper.pad(scrollPane, new Insets(8, 8, 8, 0)));
 
-        sidePanels[1] = outerPanel;
-        frame.add(AlignHelper.pad(outerPanel, new Insets(0, 8, 8, 8)), BorderLayout.LINE_END);
-
+        return outerPanel;
     }
 
     private int calculateBadgeHeight() {
@@ -481,7 +466,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
         queueListPanel.repaint();    // Redraws panel
     }
 
-    private void createPlaylistList() {
+    private JPanel createPlaylistList() {
 
         JPanel outerPanel = new JPanel();
         outerPanel.setLayout(new BoxLayout(outerPanel, BoxLayout.Y_AXIS));
@@ -519,14 +504,7 @@ public class MainGui implements QueueView, NowPlayingView, PlaylistsView, Option
 
         outerPanel.add(AlignHelper.pad(scrollPane, new Insets(8, 8, 8, 0)));
 
-        sidePanels[0] = outerPanel;
-        frame.add(AlignHelper.pad(leftHelperPanel, new Insets(0, 8, 8, 8)), BorderLayout.LINE_START);
-        leftHelperPanel.setLayout(new BorderLayout());
-        leftHelperPanel.add(outerPanel, BorderLayout.CENTER);
-
-        drawer = new Drawer(frame);
-        drawerButton.addActionListener(e -> drawer.toggle());
-        drawerButton.setFocusable(false);
+        return outerPanel;
     }
 
     @Override

@@ -19,6 +19,9 @@ public class Main {
         overrides.put("CheckBox.icon.style", "filled");
         overrides.put("CheckBox.icon.checkmarkColor", "@accentColor");
         overrides.put("TextComponent.arc", "24");
+        overrides.put("SplitPane.dividerSize", "8");
+        overrides.put("SplitPane.centerOneTouchButtons", "true");
+        overrides.put("SplitPaneDivider.style", "plain");
         FlatLaf.setGlobalExtraDefaults(overrides);
         FlatDarkLaf.setup();
 
