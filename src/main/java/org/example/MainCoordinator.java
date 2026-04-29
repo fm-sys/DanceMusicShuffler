@@ -9,11 +9,7 @@ import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import java.util.Collection;
 
 public class MainCoordinator {
-    private final QueuePresenter queuePresenter;
-    private final NowPlayingPresenter nowPlayingPresenter;
-    private final PlaylistsPresenter playlistsPresenter;
-
-    // todo: they are currently referenced from MainGui, ideally they can be private after refactoring is complete
+    // todo: currently referenced from MainGui, ideally this dependency should be resolved
     SecondaryMonitorGui secondaryMonitorGui;
 
     PreferencesStore preferencesStore = new PreferencesStore();
@@ -24,7 +20,7 @@ public class MainCoordinator {
 
     PlayerService playerService = new PlayerService(playerStore, playbackDevicesStore);
 
-    ShuffleAlgorithm shuffleAlgorithm = new ShuffleAlgorithm(playlistStore);
+    ShuffleAlgorithm shuffleAlgorithm = new ShuffleAlgorithm(playlistStore, playerService);
 
     final OcrOverlayWindow ocrOverlayWindow = new OcrOverlayWindow(playerStore, shuffleAlgorithm);
     final SpotifyOcrIntegration spotifyOcrProcessor = SpotifyOcrIntegration.create(ocrOverlayWindow);
@@ -33,18 +29,20 @@ public class MainCoordinator {
     public MainCoordinator(Collection<PlaylistSimplified> lists) {
 
         // create presenters
-        queuePresenter = new QueuePresenter(playerStore, shuffleAlgorithm);
-        nowPlayingPresenter = new NowPlayingPresenter(playerService, shuffleAlgorithm);
-        playlistsPresenter =  new PlaylistsPresenter(playlistStore, filterStore);
+        QueuePresenter queuePresenter = new QueuePresenter(playerStore, shuffleAlgorithm);
+        NowPlayingPresenter nowPlayingPresenter = new NowPlayingPresenter(playerService, shuffleAlgorithm);
+        PlaylistsPresenter playlistsPresenter =  new PlaylistsPresenter(playlistStore, filterStore);
+        OptionsPresenter optionsPresenter = new OptionsPresenter(playlistStore, preferencesStore, filterStore, shuffleAlgorithm);
 
         // create GUI
         secondaryMonitorGui = new SecondaryMonitorGui(playerStore, preferencesStore, shuffleAlgorithm);
-        MainGui mainGui = new MainGui(queuePresenter, nowPlayingPresenter, playlistsPresenter, this);
+        MainGui mainGui = new MainGui(queuePresenter, nowPlayingPresenter, playlistsPresenter, optionsPresenter, this);
 
         // init presenters
         queuePresenter.init(mainGui);
         nowPlayingPresenter.init(mainGui);
         playlistsPresenter.init(mainGui);
+        optionsPresenter.init(mainGui);
 
         LocalSpotifyProvider.INSTANCE.initialize(playerStore);
 

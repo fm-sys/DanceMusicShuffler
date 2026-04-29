@@ -32,7 +32,7 @@ public class PlayerService {
     }
 
 
-    PlayerService(PlayerStore playerStore, PlaybackDevicesStore playbackDevicesStore) {
+    public PlayerService(PlayerStore playerStore, PlaybackDevicesStore playbackDevicesStore) {
         this.playerStore = playerStore;
         this.playbackDevicesStore = playbackDevicesStore;
     }

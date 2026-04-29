@@ -15,7 +15,7 @@ public class MockedSecondaryMonitor {
         System.out.println("This is a mocked secondary monitor for testing purposes.");
 
         PlayerStore playerStore = new PlayerStore();
-        SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui(playerStore, new PreferencesStore(), new ShuffleAlgorithm(new PlaylistStore()));
+        SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui(playerStore, new PreferencesStore(), new ShuffleAlgorithm(new PlaylistStore(), new PlayerService(new PlayerStore(), new PlaybackDevicesStore())));
         secondaryMonitorGui.launchSecondaryMonitorGui(true);
 //        secondaryMonitorGui.setProgress(1000000, 2000000);
 

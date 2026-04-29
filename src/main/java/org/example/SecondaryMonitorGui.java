@@ -46,7 +46,7 @@ public class SecondaryMonitorGui {
         this.shuffleAlgorithm = shuffleAlgorithm;
 
         // Create a JFrame
-        frame = new JFrame("Fullscreen on Secondary Monitor");
+        frame = new JFrame("Dance Floor Display");
         frame.setUndecorated(true);
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
@@ -187,20 +187,12 @@ public class SecondaryMonitorGui {
                     cover.setIcon(new ImageIcon(playerState.coverImage()));
                 }
 
-                if (preferencesStore.get().colorBackground()) {
+                if (preferencesStore.get().showBackground()) {
                     backgroundPanel.setBackgroundImage(playerState.backgroundImage());
                 }
 
                 titleLabel.setText(playerState.track().getName());
                 artistLabel.setText(Arrays.stream(playerState.track().getArtists()).map(IArtist::getName).collect(Collectors.joining(", ")));
-
-//                if (currentTrackId == null) {
-//                    currentTrackId = playerState.track().getId();
-//                } else if (!currentTrackId.equals(playerState.track().getId())) {
-//                    startTimestamp = System.currentTimeMillis();
-//                    currentTrackId = playerState.track().getId();
-//                    duration = playerState.track().getDurationMs();
-//                }
 
                 badgesPanel.removeAll();
 
@@ -259,19 +251,19 @@ public class SecondaryMonitorGui {
         sidePanel.revalidate();
         sidePanel.repaint();
     }
-    public void setSidePanelVisible(boolean visible) { //todo make private
+    private void setSidePanelVisible(boolean visible) {
         sidePanel.setPreferredSize(new Dimension(visible ? 500 : 0, 0));
         sidePanel.revalidate();
     }
 
-    public void setCoverVisible(boolean visible) { //todo make private
+    private void setCoverVisible(boolean visible) {
         cover.setVisible(visible);
         cover.revalidate();
     }
 
-    public void setColoredBackground(boolean enabled) { //todo make private
+    private void setColoredBackground(boolean enabled) {
         if (enabled) {
-            backgroundPanel.setBackgroundImage(playerStore.get().coverImage());
+            backgroundPanel.setBackgroundImage(playerStore.get().backgroundImage());
         } else {
             backgroundPanel.setBackgroundImage(null);
         }
@@ -280,6 +272,6 @@ public class SecondaryMonitorGui {
     private void applyPrefs(PreferenceParams prefs) {
         setSidePanelVisible(prefs.showSidePanel());
         setCoverVisible(prefs.showCover());
-        setColoredBackground(prefs.colorBackground());
+        setColoredBackground(prefs.showBackground());
     }
 }

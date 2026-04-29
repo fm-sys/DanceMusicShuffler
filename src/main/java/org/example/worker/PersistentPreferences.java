@@ -37,7 +37,7 @@ public class PersistentPreferences {
         this.searchString = filterStore.get();
         this.showSidePanel = params.showSidePanel();
         this.showCover = params.showCover();
-        this.colorBackground = params.colorBackground();
+        this.colorBackground = params.showBackground();
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)

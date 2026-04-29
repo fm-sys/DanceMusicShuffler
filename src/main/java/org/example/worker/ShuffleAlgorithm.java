@@ -1,7 +1,9 @@
 package org.example.worker;
 
 import org.apache.hc.core5.http.ParseException;
+import org.example.PlayerService;
 import org.example.PlaylistStore;
+import org.example.PreferenceParams;
 import org.example.api.Api;
 import org.example.models.PlaylistGroup;
 import org.example.models.PlaylistModel;
@@ -18,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class ShuffleAlgorithm {
     PlaylistStore playlistStore;
+    PlayerService playerService;
 
     final FixedSizeQueue<PlaylistModel> recentlyUsedPlaylists = new FixedSizeQueue<>(0);
     final List<UsedTrack> alreadyUsedTracks = new ArrayList<>();
@@ -28,8 +31,9 @@ public class ShuffleAlgorithm {
     boolean wasExclusive = false;
 
 
-    public ShuffleAlgorithm(PlaylistStore playlistStore) {
+    public ShuffleAlgorithm(PlaylistStore playlistStore, PlayerService playerService) {
         this.playlistStore = playlistStore;
+        this.playerService = playerService;
     }
 
     private UsedTrack getUsedTrackIfExists(IPlaylistItem track) {
@@ -108,11 +112,11 @@ public class ShuffleAlgorithm {
         throw new RuntimeException("We failed at random"); // Sollte nie passieren
     }
 
-    public CompletableFuture<Boolean> shuffleAsync(int count, int cooldown, boolean groupPlaylists, String deviceId) {
-        return SpotifyApiThreading.executeAsync(() -> shuffle(count, cooldown, groupPlaylists, deviceId));
+    public CompletableFuture<Boolean> shuffleAsync(PreferenceParams params) {
+        return SpotifyApiThreading.executeAsync(() -> shuffle(params.count(), params.cooldown(), params.groupPlaylists()));
     }
 
-    public boolean shuffle(int count, int cooldown, boolean groupPlaylists, String deviceId) {
+    private boolean shuffle(int count, int cooldown, boolean groupPlaylists) {
         recentlyUsedPlaylists.setMaxSize(cooldown);
 
         if (count <= 0) {
@@ -142,9 +146,10 @@ public class ShuffleAlgorithm {
         alreadyUsedTracks.add(new UsedTrack(chosenTrack, chosenPlaylist));
 
         try {
-            Api.INSTANCE.addItemToUsersPlaybackQueue(chosenTrack.getUri()).device_id(deviceId).build().execute();
+            // todo: move API call into PlayerService
+            Api.INSTANCE.addItemToUsersPlaybackQueue(chosenTrack.getUri()).device_id(playerService.playbackDevicesStore.getActiveDeviceId()).build().execute();
             System.out.println("Added track to queue: " + chosenTrack.getName());
-            return shuffle(count - 1, cooldown, groupPlaylists, deviceId);
+            return shuffle(count - 1, cooldown, groupPlaylists);
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             e.printStackTrace();
             return false;
