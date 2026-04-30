@@ -18,10 +18,7 @@ jar {
 }
 
 dependencies {
-    // todo use official spotify-web-api-java release as soon as PR is merged and released:
-    // https://github.com/spotify-web-api-java/spotify-web-api-java/pull/457
-    // implementation 'se.michaelthelin.spotify:spotify-web-api-java:9.2.0'
-    implementation 'com.github.fm-sys:spotify-web-api-java:01f413e8'
+     implementation 'se.michaelthelin.spotify:spotify-web-api-java:10.0.0-RC3'
 
     implementation 'net.java.dev.jna:jna:5.13.0'
     implementation 'net.java.dev.jna:jna-platform:5.13.0'
