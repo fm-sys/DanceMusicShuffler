@@ -10,12 +10,14 @@ public record PlayerState(Track track, BufferedImage coverImage, BufferedImage b
                           int progressMs, long timestamp, List<IPlaylistItem> queue) {
 
     public float getProgressPercentage() {
-        if (track == null) {
+        if (track == null || track.getDurationMs() <= 0) {
             return 0;
         }
-        if (!isPlaying) {
-            return (float) progressMs / track.getDurationMs();
-        }
-        return (float) (progressMs + (System.currentTimeMillis() - timestamp)) / track.getDurationMs();
+
+        long durationMs = track.getDurationMs();
+        long elapsedMs = isPlaying ? progressMs + (System.currentTimeMillis() - timestamp) : progressMs;
+        float progress = (float) elapsedMs / durationMs;
+
+        return Math.max(0f, Math.min(1f, progress));
     }
 }
