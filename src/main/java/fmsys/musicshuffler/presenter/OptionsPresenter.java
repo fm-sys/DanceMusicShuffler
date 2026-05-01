@@ -70,15 +70,15 @@ public class OptionsPresenter {
         preferencesStore.updateGroupPlaylists(groupPlaylists);
     }
 
-    public void onSecondaryShowSideSheetChanged(boolean show) {
+    public void onShowSideSheetChanged(boolean show) {
         preferencesStore.updateShowSidePanel(show);
     }
 
-    public void onSecondaryCoverChanged(boolean show) {
+    public void onCoverChanged(boolean show) {
         preferencesStore.updateShowCover(show);
     }
 
-    public void onSecondaryColoredBackgroundChanged(boolean colored) {
+    public void onColoredBackgroundChanged(boolean colored) {
         preferencesStore.updateShowBackground(colored);
     }
 

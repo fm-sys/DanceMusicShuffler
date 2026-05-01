@@ -12,13 +12,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-public class MockedSecondaryMonitor {
+public class MockedPresentationWindow {
     public static void main(String[] args) {
-        System.out.println("This is a mocked secondary monitor for testing purposes.");
+        System.out.println("This is a mocked dance floor display for testing purposes.");
 
         PlayerStore playerStore = new PlayerStore();
         PresentationWindow presentationWindow = new PresentationWindow(playerStore, new PreferencesStore(), new ShuffleAlgorithm(new PlaylistStore(), new PlayerService(new PlayerStore(), new PlaybackDevicesStore())));
-        presentationWindow.launchSecondaryMonitorGui(true);
+        presentationWindow.launch(true);
 
         Track dummyTrack = new Track.Builder()
                 .setName("Test Song")

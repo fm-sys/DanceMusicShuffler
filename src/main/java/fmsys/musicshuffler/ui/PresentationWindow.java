@@ -145,10 +145,10 @@ public class PresentationWindow {
             }
         });
 
-        launchSecondaryMonitorGui(false);
+        launch(false);
     }
 
-    public boolean launchSecondaryMonitorGui(boolean force) {
+    public boolean launch(boolean force) {
         if (frame.isVisible()) {
             frame.toFront();
             return true;

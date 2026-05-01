@@ -55,9 +55,9 @@ public class MainWindow implements QueueView, NowPlayingView, PlaylistsView, Opt
     JSpinner songNumberSpinner;
     JSpinner cooldownSpinner;
     JCheckBox groupPlaylistsCheckbox;
-    JCheckBox secondaryGuiShowSideSheetCheckbox;
-    JCheckBox secondaryGuiCoverCheckbox;
-    JCheckBox secondaryGuiColoredBackgroundCheckbox;
+    JCheckBox presentationWindowShowSideSheetCheckbox;
+    JCheckBox presentationWindowCoverCheckbox;
+    JCheckBox presentationWindowColoredBackgroundCheckbox;
     JButton loadAndShuffleButton;
     JButton loadPrefsButton;
     private boolean updatingPreferencesFromStore;
@@ -245,43 +245,43 @@ public class MainWindow implements QueueView, NowPlayingView, PlaylistsView, Opt
         labeledPanelMonitor.setMaximumSize(new Dimension(Integer.MAX_VALUE, 0));
         centerOptionsPanel.add(labeledPanelMonitor);
 
-        secondaryGuiShowSideSheetCheckbox = new JCheckBox("Show side sheet");
-        secondaryGuiShowSideSheetCheckbox.setSelected(true);
-        secondaryGuiShowSideSheetCheckbox.addActionListener(e -> {
+        presentationWindowShowSideSheetCheckbox = new JCheckBox("Show side sheet");
+        presentationWindowShowSideSheetCheckbox.setSelected(true);
+        presentationWindowShowSideSheetCheckbox.addActionListener(e -> {
             if (!updatingPreferencesFromStore) {
-                optionsPresenter.onSecondaryShowSideSheetChanged(secondaryGuiShowSideSheetCheckbox.isSelected());
+                optionsPresenter.onShowSideSheetChanged(presentationWindowShowSideSheetCheckbox.isSelected());
             }
         });
-        labeledPanelMonitor.add(secondaryGuiShowSideSheetCheckbox);
+        labeledPanelMonitor.add(presentationWindowShowSideSheetCheckbox);
 
-        secondaryGuiCoverCheckbox = new JCheckBox("Show cover");
-        secondaryGuiCoverCheckbox.setSelected(true);
-        secondaryGuiCoverCheckbox.addActionListener(e -> {
+        presentationWindowCoverCheckbox = new JCheckBox("Show cover");
+        presentationWindowCoverCheckbox.setSelected(true);
+        presentationWindowCoverCheckbox.addActionListener(e -> {
             if (!updatingPreferencesFromStore) {
-                optionsPresenter.onSecondaryCoverChanged(secondaryGuiCoverCheckbox.isSelected());
+                optionsPresenter.onCoverChanged(presentationWindowCoverCheckbox.isSelected());
             }
         });
-        labeledPanelMonitor.add(secondaryGuiCoverCheckbox);
+        labeledPanelMonitor.add(presentationWindowCoverCheckbox);
 
-        secondaryGuiColoredBackgroundCheckbox = new JCheckBox("Use colored background");
-        secondaryGuiColoredBackgroundCheckbox.setSelected(true);
-        secondaryGuiColoredBackgroundCheckbox.addActionListener(e -> {
+        presentationWindowColoredBackgroundCheckbox = new JCheckBox("Use colored background");
+        presentationWindowColoredBackgroundCheckbox.setSelected(true);
+        presentationWindowColoredBackgroundCheckbox.addActionListener(e -> {
             if (!updatingPreferencesFromStore) {
-                optionsPresenter.onSecondaryColoredBackgroundChanged(secondaryGuiColoredBackgroundCheckbox.isSelected());
+                optionsPresenter.onColoredBackgroundChanged(presentationWindowColoredBackgroundCheckbox.isSelected());
             }
         });
-        labeledPanelMonitor.add(secondaryGuiColoredBackgroundCheckbox);
+        labeledPanelMonitor.add(presentationWindowColoredBackgroundCheckbox);
 
-        JButton launchGuiButton = new JButton("Open secondary monitor GUI");
-        launchGuiButton.addActionListener(e -> {
-            if (!coordinator.presentationWindow.launchSecondaryMonitorGui(false)) {
+        JButton launchPresentationWindowButton = new JButton("Open Dance Floor Display");
+        launchPresentationWindowButton.addActionListener(e -> {
+            if (!coordinator.presentationWindow.launch(false)) {
                 int result = JOptionPane.showConfirmDialog(frame, "Secondary monitor not detected. Open Anyway?", "No second monitor", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
-                    coordinator.presentationWindow.launchSecondaryMonitorGui(true);
+                    coordinator.presentationWindow.launch(true);
                 }
             }
         });
-        labeledPanelMonitor.add(launchGuiButton);
+        labeledPanelMonitor.add(launchPresentationWindowButton);
 
         centerOptionsPanel.add(Box.createVerticalStrut(10));
 
@@ -315,9 +315,9 @@ public class MainWindow implements QueueView, NowPlayingView, PlaylistsView, Opt
         songNumberSpinner.setValue(params.count());
         cooldownSpinner.setValue(params.cooldown());
         groupPlaylistsCheckbox.setSelected(params.groupPlaylists());
-        secondaryGuiShowSideSheetCheckbox.setSelected(params.showSidePanel());
-        secondaryGuiCoverCheckbox.setSelected(params.showCover());
-        secondaryGuiColoredBackgroundCheckbox.setSelected(params.showBackground());
+        presentationWindowShowSideSheetCheckbox.setSelected(params.showSidePanel());
+        presentationWindowCoverCheckbox.setSelected(params.showCover());
+        presentationWindowColoredBackgroundCheckbox.setSelected(params.showBackground());
         loadPrefsButton.setText("\u2191   Load configuration");
         loadPrefsButton.setEnabled(true);
         updatingPreferencesFromStore = false;
