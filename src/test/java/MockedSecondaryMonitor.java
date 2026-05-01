@@ -1,5 +1,7 @@
-import org.example.*;
-import org.example.worker.ShuffleAlgorithm;
+import fmsys.musicshuffler.service.PlayerService;
+import fmsys.musicshuffler.store.*;
+import fmsys.musicshuffler.ui.PresentationWindow;
+import fmsys.musicshuffler.service.ShuffleAlgorithm;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 
@@ -15,8 +17,8 @@ public class MockedSecondaryMonitor {
         System.out.println("This is a mocked secondary monitor for testing purposes.");
 
         PlayerStore playerStore = new PlayerStore();
-        SecondaryMonitorGui secondaryMonitorGui = new SecondaryMonitorGui(playerStore, new PreferencesStore(), new ShuffleAlgorithm(new PlaylistStore(), new PlayerService(new PlayerStore(), new PlaybackDevicesStore())));
-        secondaryMonitorGui.launchSecondaryMonitorGui(true);
+        PresentationWindow presentationWindow = new PresentationWindow(playerStore, new PreferencesStore(), new ShuffleAlgorithm(new PlaylistStore(), new PlayerService(new PlayerStore(), new PlaybackDevicesStore())));
+        presentationWindow.launchSecondaryMonitorGui(true);
 
         Track dummyTrack = new Track.Builder()
                 .setName("Test Song")
