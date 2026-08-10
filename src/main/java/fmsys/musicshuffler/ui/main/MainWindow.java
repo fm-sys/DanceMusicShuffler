@@ -49,7 +49,8 @@ public class MainWindow extends JFrame {
 
     public MainWindow(Collection<PlaylistSimplified> lists) {
         setLayout(new BorderLayout());
-        createMainContentPanels();
+        addMainContentPanels();
+        initPresenters();
 
         LocalSpotifyProvider.INSTANCE.initialize(playerStore);
         playlistStore.setState(lists.stream().map(PlaylistModel::new).toList());
@@ -87,7 +88,7 @@ public class MainWindow extends JFrame {
         });
     }
 
-    private void createMainContentPanels() {
+    private void addMainContentPanels() {
         mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, optionsPanel, queuePanel);
         mainSplitPane.setResizeWeight(1.0);
         mainSplitPane.setOneTouchExpandable(true);
@@ -102,7 +103,9 @@ public class MainWindow extends JFrame {
 
         add(sideSplitPane, BorderLayout.CENTER);
         add(nowPlayingPanel, BorderLayout.PAGE_END);
+    }
 
+    private void initPresenters() {
         queuePresenter.init(queuePanel);
         nowPlayingPresenter.init(nowPlayingPanel);
         playlistsPresenter.init(playlistsPanel);
