@@ -66,4 +66,8 @@ public class BadgeLabel extends JLabel {
             frame.setVisible(true);
         });
     }
+
+    public static int defaultHeight() {
+        return new BadgeLabel("Dummy").getPreferredSize().height;
+    }
 }

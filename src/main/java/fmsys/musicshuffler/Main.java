@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLaf;
 import fmsys.musicshuffler.api.Api;
 import fmsys.musicshuffler.ui.SplashScreen;
+import fmsys.musicshuffler.ui.main.MainWindow;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 
 import java.util.*;
@@ -43,7 +44,7 @@ public class Main {
 
         getPlaylists(() -> {
             splashScreen.dispose();
-            new MainCoordinator(playlists);
+            new MainWindow(playlists);
         });
     }
 
