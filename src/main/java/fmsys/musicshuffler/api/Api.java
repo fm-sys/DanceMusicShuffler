@@ -2,6 +2,7 @@ package fmsys.musicshuffler.api;
 
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.SpotifyHttpManager;
+import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
 
 import javax.swing.*;
@@ -79,10 +80,8 @@ public class Api {
                 .build()
                 .executeAsync()
                 .thenAccept(credentials -> {
-                    INSTANCE.setAccessToken(credentials.getAccessToken());
-                    INSTANCE.setRefreshToken(credentials.getRefreshToken());
-                    System.out.println("Autorisation successful. Token expires in: " + credentials.getExpiresIn() + " seconds.");
-                    new Timer(1000 * (credentials.getExpiresIn() - 60), evt -> refreshAccessToken()).start();
+                    System.out.print("Authorisation successful. ");
+                    applyCredentials(credentials);
                     if (readyCallback != null) {
                         readyCallback.run();
                     }
@@ -93,13 +92,23 @@ public class Api {
                 });
     }
 
+    private void applyCredentials(AuthorizationCodeCredentials credentials) {
+        INSTANCE.setAccessToken(credentials.getAccessToken());
+        if (credentials.getRefreshToken() != null) {
+            INSTANCE.setRefreshToken(credentials.getRefreshToken());
+        }
+        System.out.println("Token expires in: " + credentials.getExpiresIn() / 60 + " minutes.");
+        Timer timer = new Timer(1000 * (credentials.getExpiresIn() - 300), evt -> refreshAccessToken());
+        timer.setRepeats(false);
+        timer.start();
+    }
+
     private void refreshAccessToken() {
         INSTANCE.authorizationCodePKCERefresh()
                 .build()
                 .executeAsync().thenAccept(credentials -> {
-                    INSTANCE.setAccessToken(credentials.getAccessToken());
-                    INSTANCE.setRefreshToken(credentials.getRefreshToken());
-                    System.out.println("Refreshed token.");
+                    System.out.print("Refreshed token. ");
+                    applyCredentials(credentials);
                 }).whenComplete((res, ex) -> {
                     if (ex != null) {
                         System.err.println("Caught Exception: " + ex.getMessage());
@@ -114,6 +123,5 @@ public class Api {
             System.out.println("Error: " + e.getMessage());
         }
         launchAuthorizationCodeUri();
-//        refreshAccessToken();
     }
 }
